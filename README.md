@@ -1,8 +1,13 @@
 # News Swing Trader
 
-Production-oriented scaffolding for a future news-driven US equity swing-trading system. This repository is currently at **Milestone 1**: Milestone 0 tooling plus authoritative versioned JSON Schemas, semantic invariants, and one deterministic cross-language fixture corpus.
+Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
+repository is currently at **Milestone 2A**: Milestone 1 contracts plus immutable PostgreSQL news
+revision persistence, deterministic content hashing, internal duplicate/conflict handling, and
+atomic pending-job creation.
 
-It does not ingest or persist news, run job processing, expose HTTP endpoints, generate signals, connect to a broker, download a model, contact an AI API, create risk decisions, or produce order intents.
+It has no HTTP ingestion endpoint, admission policy, job claiming, worker execution, signal
+generation, broker integration, model download, external AI access, risk decisions, or order
+intents.
 
 The contract definitions and their encoded semantic invariants are documented in
 `contracts/README.md`.

@@ -1,0 +1,51 @@
+{
+  "corpus_version": 1,
+  "vectors": [
+    {
+      "name": "nfc-newlines-and-symbol-order",
+      "event_id": "018f6d43-7f2b-7c6a-8f31-a8d984427001",
+      "correlation_id": "75dbeb03-bede-418a-aaf8-b58b4f1a6a71",
+      "provider": "fixture_wire",
+      "news_id": "wire-hash-1",
+      "revision_id": "r1",
+      "canonical_url": "https://news.example.test/wire-hash-1",
+      "source_created_at": "2026-01-15T14:30:00Z",
+      "source_updated_at": "2026-01-15T14:31:00Z",
+      "received_at": "2026-01-15T14:31:03Z",
+      "deadline_at": "2026-01-15T14:36:03Z",
+      "headline": "  Café\r\nbeats estimates  ",
+      "language": "en-US",
+      "summary": "  Revenue grew\r\nfaster. ",
+      "body": null,
+      "affected_symbols": ["BETA", "ACME"],
+      "expected_headline": "Café\nbeats estimates",
+      "expected_summary": "Revenue grew\nfaster.",
+      "expected_body": null,
+      "expected_symbols": ["ACME", "BETA"],
+      "expected_content_hash": "96de90af59d5711773e38cfbd10a2f70f52fa45861ef9277233af84fe91840aa"
+    },
+    {
+      "name": "absent-summary-and-bare-cr",
+      "event_id": "6ab60b5e-9999-44b8-8d9b-e53f21ed0d07",
+      "correlation_id": "d7d06d8f-6064-46a0-85bb-38ae4c2c228d",
+      "provider": "fixture_filings",
+      "news_id": "filing-hash-2",
+      "revision_id": "amendment-2",
+      "canonical_url": "https://filings.example.test/filing-hash-2",
+      "source_created_at": "2026-01-16T08:55:00Z",
+      "source_updated_at": "2026-01-16T08:58:00Z",
+      "received_at": "2026-01-16T08:58:04Z",
+      "deadline_at": "2026-01-16T09:03:04Z",
+      "headline": "ACME announces merger",
+      "language": "en",
+      "summary": null,
+      "body": "Body\rline",
+      "affected_symbols": ["ACME"],
+      "expected_headline": "ACME announces merger",
+      "expected_summary": null,
+      "expected_body": "Body\nline",
+      "expected_symbols": ["ACME"],
+      "expected_content_hash": "86f176a6484551c90ac2d1983eaa35606c209db62c2e22a5d54433ff9dbe45a8"
+    }
+  ]
+}
