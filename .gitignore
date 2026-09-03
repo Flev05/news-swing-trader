@@ -1,0 +1,11 @@
+.env
+.tools/
+.mvn/timing.properties
+apps/ai-worker/.venv/
+apps/ai-worker/.mypy_cache/
+apps/ai-worker/.pytest_cache/
+apps/ai-worker/.ruff_cache/
+apps/ai-worker/**/__pycache__/
+apps/core-java/target/
+*.log
+.ruff_cache/

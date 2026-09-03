@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: news-swing-core
+  main:
+    web-application-type: none
+  datasource:
+    url: ${TRADER_DATABASE_URL:jdbc:postgresql://127.0.0.1:15432/news_swing}
+    username: ${TRADER_DATABASE_USER:news_swing}
+    password: ${TRADER_DATABASE_PASSWORD:local-dev-only}
+  flyway:
+    create-schemas: true
+    default-schema: trader
+    schemas: trader
+    locations: classpath:db/migration
