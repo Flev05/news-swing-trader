@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "inference_id": "0ea73b1a-cab1-4e84-908f-61fb6cb8ce02",
+  "news_event_id": "22b581b0-1567-4477-bd63-9ea4c00d90d4",
+  "news_event_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "generated_at": "2026-01-18T10:00:00Z",
+  "model": {
+    "backend": "llama.cpp",
+    "name": "fixture-local-model",
+    "version": "q4_1",
+    "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "configuration_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "prompt_template_version": "1.0.0"
+  },
+  "ticker_results": [
+    {
+      "ticker": "RUMR",
+      "issuer_role": "primary",
+      "event_type": "merger_acquisition",
+      "direction": "positive",
+      "materiality": "medium",
+      "relevance": "direct",
+      "novelty": "new",
+      "expected_horizon": "days",
+      "schedule_status": "unscheduled",
+      "information_status": "rumor",
+      "abstain": false,
+      "reason_codes": [
+        "unverified_claim"
+      ]
+    }
+  ]
+}

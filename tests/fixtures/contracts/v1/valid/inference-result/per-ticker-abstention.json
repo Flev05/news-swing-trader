@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "inference_id": "f6365f11-8bb3-49e6-9557-1199d16c2c9a",
+  "news_event_id": "018f6d43-7f2b-7c6a-8f31-a8d984427003",
+  "news_event_sha256": "4e07408562bedb8b60ce05c1decfe3ad16b7223092f6f0fbc5f1c6e6437e9b49",
+  "generated_at": "2026-01-18T08:30:00Z",
+  "model": {
+    "backend": "fake",
+    "name": "deterministic-fixture",
+    "version": "1",
+    "prompt_template_version": "1.0.0"
+  },
+  "ticker_results": [
+    {
+      "ticker": "MYST",
+      "issuer_role": "unknown",
+      "event_type": "unknown",
+      "direction": "unknown",
+      "materiality": "unknown",
+      "relevance": "unknown",
+      "novelty": "unknown",
+      "expected_horizon": "unknown",
+      "schedule_status": "unknown",
+      "information_status": "unknown",
+      "numeric_facts": [],
+      "abstain": true,
+      "reason_codes": [
+        "ambiguous_ticker_attribution"
+      ]
+    }
+  ]
+}

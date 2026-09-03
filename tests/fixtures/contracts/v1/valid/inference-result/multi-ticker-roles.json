@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "inference_id": "3316755d-9e25-42f6-8d1b-0f6688294771",
+  "news_event_id": "6ab60b5e-9999-44b8-8d9b-e53f21ed0d07",
+  "news_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "generated_at": "2026-01-16T09:00:00Z",
+  "model": {
+    "backend": "llama.cpp",
+    "name": "fixture-local-model",
+    "version": "q4_1",
+    "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "configuration_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "prompt_template_version": "1.0.0"
+  },
+  "ticker_results": [
+    {
+      "ticker": "ACME",
+      "issuer_role": "primary",
+      "event_type": "merger_acquisition",
+      "direction": "mixed",
+      "materiality": "high",
+      "relevance": "direct",
+      "novelty": "new",
+      "expected_horizon": "months",
+      "schedule_status": "unscheduled",
+      "information_status": "fact",
+      "numeric_facts": [
+        {
+          "metric": "deal_value",
+          "actual": "4200",
+          "unit": "currency",
+          "currency": "USD",
+          "period": "announced"
+        }
+      ],
+      "abstain": false,
+      "reason_codes": [
+        "deal_announced"
+      ]
+    },
+    {
+      "ticker": "BETA",
+      "issuer_role": "counterparty",
+      "event_type": "merger_acquisition",
+      "direction": "positive",
+      "materiality": "high",
+      "relevance": "direct",
+      "novelty": "new",
+      "expected_horizon": "weeks",
+      "schedule_status": "unscheduled",
+      "information_status": "fact",
+      "numeric_facts": [
+        {
+          "metric": "deal_value",
+          "actual": "4200",
+          "unit": "currency",
+          "currency": "USD",
+          "period": "announced"
+        }
+      ],
+      "abstain": false,
+      "reason_codes": [
+        "counterparty_impact",
+        "deal_announced"
+      ]
+    }
+  ]
+}

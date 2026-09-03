@@ -1,8 +1,11 @@
 # News Swing Trader
 
-Production-oriented scaffolding for a future news-driven US equity swing-trading system. This repository is currently at **Milestone 0**: local tooling, a PostgreSQL baseline migration, and a deterministic fake inference placeholder only.
+Production-oriented scaffolding for a future news-driven US equity swing-trading system. This repository is currently at **Milestone 1**: Milestone 0 tooling plus authoritative versioned JSON Schemas, semantic invariants, and one deterministic cross-language fixture corpus.
 
-It does not ingest news, define trading contracts, generate signals, connect to Alpaca, download a model, contact any AI API, create orders, or submit broker requests.
+It does not ingest or persist news, run job processing, expose HTTP endpoints, generate signals, connect to a broker, download a model, contact an AI API, create risk decisions, or produce order intents.
+
+The contract definitions and their encoded semantic invariants are documented in
+`contracts/README.md`.
 
 ## Environment
 
@@ -43,19 +46,23 @@ The local Compose stack contains PostgreSQL only. The Java application can be st
 
 ## Tooling versions
 
-Direct dependency and tool versions are pinned only after they resolve and pass Milestone 0 checks on this host:
+Direct dependency and tool versions are pinned only after they resolve and pass repository checks on this host:
 
 - Java: 21.0.12; Maven Wrapper distribution: 3.9.12.
 - Spring Boot: 4.1.1; Java formatting plugin: Spotless 3.9.0.
+- Java JSON Schema validator: NetworkNT 3.0.7.
 - Python runtime: 3.12.14; uv: 0.12.9.
+- Python JSON Schema validator: jsonschema 4.26.0 with non-GPL format checks.
+- Python type stubs: types-jsonschema 4.26.0.20260518.
 - Python development dependencies: Ruff 0.16.5, mypy 2.3.1, pytest 9.1.1.
 
 The Spring Boot BOM manages Flyway, PostgreSQL JDBC, and Testcontainers versions; their resolved versions are visible through `./mvnw -f apps/core-java dependency:tree`.
 
-## Milestone 0 verification
+## Milestone 1 verification
 
-- Java compilation and the Flyway/Testcontainers migration smoke test.
-- Python formatting, linting, type checking, and deterministic fake-backend tests.
+- Both Java and Python validate every case in `tests/fixtures/contracts/v1/corpus.json` against the same schemas.
+- Java compilation and the existing Flyway/Testcontainers migration smoke test.
+- Python formatting, linting, type checking, contract tests, and deterministic fake-backend tests.
 - Docker Compose syntax and PostgreSQL health checks.
 
-Later milestones add contracts, ingestion, durable jobs, local inference, deterministic decisioning, DRY_RUN intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from this milestone.
+Later milestones add ingestion, durable jobs, local inference, deterministic decisioning, DRY_RUN intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from this milestone.

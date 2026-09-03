@@ -1,16 +1,19 @@
 [project]
 name = "news-swing-ai-worker"
 version = "0.0.1"
-description = "Milestone 0 deterministic local inference placeholder"
+description = "Local worker scaffold with Milestone 1 shared-contract validation"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "jsonschema[format-nongpl]==4.26.0",
+]
 
 [dependency-groups]
 dev = [
     "mypy==2.3.1",
     "pytest==9.1.1",
     "ruff==0.16.5",
+    "types-jsonschema==4.26.0.20260518",
 ]
 
 [project.scripts]

@@ -1,0 +1,178 @@
+{
+  "corpus_version": 1,
+  "cases": [
+    {
+      "name": "inference.invalid.decimal-as-number",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/decimal-as-number.json",
+      "expected_valid": false,
+      "intended_rule": "decimal values are JSON strings",
+      "expected_violations": [
+        {
+          "keyword": "type",
+          "instance_path": "/ticker_results/0/numeric_facts/0/actual"
+        }
+      ]
+    },
+    {
+      "name": "inference.invalid.duplicate-ticker",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/duplicate-ticker.json",
+      "expected_valid": false,
+      "intended_rule": "ticker_results are unique by ticker",
+      "expected_violations": [
+        {
+          "keyword": "x-unique-by",
+          "instance_path": "/ticker_results"
+        }
+      ]
+    },
+    {
+      "name": "inference.invalid.inconsistent-abstention",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/inconsistent-abstention.json",
+      "expected_valid": false,
+      "intended_rule": "abstained extraction fields are unknown",
+      "expected_violations": [
+        {
+          "keyword": "const",
+          "instance_path": "/ticker_results/0/direction"
+        }
+      ]
+    },
+    {
+      "name": "inference.invalid.non-local-backend",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/non-local-backend.json",
+      "expected_valid": false,
+      "intended_rule": "backend is local",
+      "expected_violations": [
+        {
+          "keyword": "enum",
+          "instance_path": "/model/backend"
+        }
+      ]
+    },
+    {
+      "name": "inference.invalid.non-utc-generated-at",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/non-utc-generated-at.json",
+      "expected_valid": false,
+      "intended_rule": "generated_at ends in Z",
+      "expected_violations": [
+        {
+          "keyword": "pattern",
+          "instance_path": "/generated_at"
+        }
+      ]
+    },
+    {
+      "name": "inference.invalid.unknown-property",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/inference-result/unknown-property.json",
+      "expected_valid": false,
+      "intended_rule": "ticker result is closed",
+      "expected_violations": [
+        {
+          "keyword": "additionalProperties",
+          "instance_path": "/ticker_results/0"
+        }
+      ]
+    },
+    {
+      "name": "inference.valid.guidance-revision",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/inference-result/guidance-revision.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "inference.valid.multi-ticker-roles",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/inference-result/multi-ticker-roles.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "inference.valid.per-ticker-abstention",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/inference-result/per-ticker-abstention.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "inference.valid.rumor",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/inference-result/rumor.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "inference.valid.single-ticker-earnings",
+      "schema": "contracts/v1/inference-result.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/inference-result/single-ticker-earnings.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "news.invalid.invalid-content-hash",
+      "schema": "contracts/v1/news-event.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/news-event/invalid-content-hash.json",
+      "expected_valid": false,
+      "intended_rule": "content_hash is lowercase SHA-256",
+      "expected_violations": [
+        {
+          "keyword": "pattern",
+          "instance_path": "/content_hash"
+        }
+      ]
+    },
+    {
+      "name": "news.invalid.missing-content-hash",
+      "schema": "contracts/v1/news-event.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/news-event/missing-content-hash.json",
+      "expected_valid": false,
+      "intended_rule": "content_hash is required",
+      "expected_violations": [
+        {
+          "keyword": "required",
+          "instance_path": ""
+        }
+      ]
+    },
+    {
+      "name": "news.invalid.non-utc-source-timestamp",
+      "schema": "contracts/v1/news-event.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/invalid/news-event/non-utc-source-timestamp.json",
+      "expected_valid": false,
+      "intended_rule": "source timestamps end in Z",
+      "expected_violations": [
+        {
+          "keyword": "pattern",
+          "instance_path": "/source_updated_at"
+        }
+      ]
+    },
+    {
+      "name": "news.valid.multi-ticker-revision",
+      "schema": "contracts/v1/news-event.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/news-event/multi-ticker-revision.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    },
+    {
+      "name": "news.valid.single-ticker",
+      "schema": "contracts/v1/news-event.schema.json",
+      "fixture": "tests/fixtures/contracts/v1/valid/news-event/single-ticker.json",
+      "expected_valid": true,
+      "intended_rule": null,
+      "expected_violations": []
+    }
+  ]
+}

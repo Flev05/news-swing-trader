@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "inference_id": "8b9af02e-0c4c-4f3e-9c14-ffb0ef44ac12",
+  "news_event_id": "018f6d43-7f2b-7c6a-8f31-a8d984427001",
+  "news_event_sha256": "3a7bd3e2360a3d80b44b62d5c6d1c9d346e8f7194edcf0f34f3f30f8fd2f2f19",
+  "generated_at": "2026-01-15T14:35:00Z",
+  "model": {
+    "backend": "llama.cpp",
+    "name": "fixture-local-model",
+    "version": "q4_1",
+    "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "configuration_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "prompt_template_version": "1.0.0"
+  },
+  "ticker_results": [
+    {
+      "ticker": "ACME",
+      "issuer_role": "primary",
+      "event_type": "earnings",
+      "direction": "positive",
+      "materiality": "high",
+      "relevance": "direct",
+      "novelty": "new",
+      "expected_horizon": "days",
+      "schedule_status": "scheduled",
+      "information_status": "fact",
+      "numeric_facts": [
+        {
+          "metric": "eps",
+          "actual": "2.14",
+          "prior": "1.72",
+          "consensus": "1.98",
+          "unit": "currency",
+          "currency": "USD",
+          "period": "Q2 2026"
+        },
+        {
+          "metric": "revenue",
+          "actual": "1250.0",
+          "consensus": "1190.5",
+          "unit": "currency",
+          "currency": "USD",
+          "period": "Q2 2026"
+        }
+      ],
+      "abstain": false,
+      "reason_codes": [
+        "earnings_above_consensus"
+      ]
+    }
+  ]
+}

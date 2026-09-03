@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "inference_id": "901fb01b-093d-46f4-b497-977896d832e2",
+  "news_event_id": "96379877-d78a-4cc9-9bc7-59ab729ec15b",
+  "news_event_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "generated_at": "2026-01-17T12:05:00Z",
+  "model": {
+    "backend": "ollama",
+    "name": "fixture-local-model",
+    "version": "config-7",
+    "configuration_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "prompt_template_version": "1.0.0"
+  },
+  "ticker_results": [
+    {
+      "ticker": "GROW",
+      "issuer_role": "primary",
+      "event_type": "guidance",
+      "direction": "positive",
+      "materiality": "medium",
+      "relevance": "direct",
+      "novelty": "update",
+      "expected_horizon": "weeks",
+      "schedule_status": "scheduled",
+      "information_status": "fact",
+      "numeric_facts": [
+        {
+          "metric": "guidance_revenue",
+          "actual": "1100",
+          "prior": "1000",
+          "consensus": "1050",
+          "unit": "currency",
+          "currency": "USD",
+          "period": "FY2026"
+        }
+      ],
+      "abstain": false,
+      "reason_codes": [
+        "guidance_raised"
+      ]
+    }
+  ]
+}

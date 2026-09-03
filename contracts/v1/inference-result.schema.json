@@ -1,0 +1,416 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.news-swing.local/v1/inference-result.schema.json",
+  "title": "Inference Result v1",
+  "description": "Untrusted per-ticker event extraction produced by an approved local backend.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "inference_id",
+    "news_event_id",
+    "news_event_sha256",
+    "generated_at",
+    "model",
+    "ticker_results"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "inference_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "news_event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "news_event_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/utcTimestamp"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "name", "version", "prompt_template_version"],
+      "properties": {
+        "backend": {
+          "enum": ["fake", "llama.cpp", "ollama"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": ".*\\S.*"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": ".*\\S.*"
+        },
+        "artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "configuration_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "prompt_template_version": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "ticker_results": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "x-unique-by": "ticker",
+      "items": {
+        "$ref": "#/$defs/tickerResult"
+      }
+    }
+  },
+  "$defs": {
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "ticker": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]{0,4}(?:[.-][A-Z])?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "numericFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric"],
+      "properties": {
+        "metric": {
+          "enum": [
+            "revenue",
+            "eps",
+            "ebitda",
+            "net_income",
+            "gross_margin",
+            "operating_margin",
+            "free_cash_flow",
+            "guidance_revenue",
+            "guidance_eps",
+            "deal_value",
+            "contract_value",
+            "headcount",
+            "other"
+          ]
+        },
+        "actual": {
+          "$ref": "#/$defs/decimal"
+        },
+        "prior": {
+          "$ref": "#/$defs/decimal"
+        },
+        "consensus": {
+          "$ref": "#/$defs/decimal"
+        },
+        "unit": {
+          "enum": [
+            "currency",
+            "percent",
+            "basis_points",
+            "shares",
+            "units",
+            "multiple",
+            "other"
+          ]
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "period": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": ".*\\S.*"
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["actual"]
+        },
+        {
+          "required": ["prior"]
+        },
+        {
+          "required": ["consensus"]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "required": ["currency"]
+          },
+          "then": {
+            "required": ["unit"],
+            "properties": {
+              "unit": {
+                "const": "currency"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "unit": {
+                "const": "currency"
+              }
+            },
+            "required": ["unit"]
+          },
+          "then": {
+            "required": ["currency"]
+          }
+        }
+      ]
+    },
+    "decimal": {
+      "type": "string",
+      "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$"
+    },
+    "tickerResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticker",
+        "issuer_role",
+        "event_type",
+        "direction",
+        "materiality",
+        "relevance",
+        "novelty",
+        "expected_horizon",
+        "schedule_status",
+        "information_status",
+        "abstain",
+        "reason_codes"
+      ],
+      "properties": {
+        "ticker": {
+          "$ref": "#/$defs/ticker"
+        },
+        "issuer_role": {
+          "enum": [
+            "primary",
+            "counterparty",
+            "competitor",
+            "customer",
+            "supplier",
+            "sector_peer",
+            "other",
+            "unknown"
+          ]
+        },
+        "event_type": {
+          "enum": [
+            "earnings",
+            "guidance",
+            "merger_acquisition",
+            "contract",
+            "product",
+            "regulatory",
+            "legal",
+            "management",
+            "financing",
+            "macro",
+            "other",
+            "unknown"
+          ]
+        },
+        "direction": {
+          "enum": ["positive", "negative", "mixed", "neutral", "unknown"]
+        },
+        "materiality": {
+          "enum": ["high", "medium", "low", "unknown"]
+        },
+        "relevance": {
+          "enum": ["direct", "indirect", "none", "unknown"]
+        },
+        "novelty": {
+          "enum": ["new", "update", "reiteration", "unknown"]
+        },
+        "expected_horizon": {
+          "enum": ["intraday", "days", "weeks", "months", "long_term", "unknown"]
+        },
+        "schedule_status": {
+          "enum": ["scheduled", "unscheduled", "ongoing", "unknown"]
+        },
+        "information_status": {
+          "enum": ["fact", "rumor", "opinion", "unknown"]
+        },
+        "numeric_facts": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/numericFact"
+          }
+        },
+        "abstain": {
+          "type": "boolean"
+        },
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reasonCode"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "abstain": {
+                "const": true
+              }
+            },
+            "required": ["abstain"]
+          },
+          "then": {
+            "properties": {
+              "issuer_role": {
+                "const": "unknown"
+              },
+              "event_type": {
+                "const": "unknown"
+              },
+              "direction": {
+                "const": "unknown"
+              },
+              "materiality": {
+                "const": "unknown"
+              },
+              "relevance": {
+                "const": "unknown"
+              },
+              "novelty": {
+                "const": "unknown"
+              },
+              "expected_horizon": {
+                "const": "unknown"
+              },
+              "schedule_status": {
+                "const": "unknown"
+              },
+              "information_status": {
+                "const": "unknown"
+              },
+              "numeric_facts": {
+                "maxItems": 0
+              },
+              "reason_codes": {
+                "items": {
+                  "$ref": "#/$defs/abstainReasonCode"
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "event_type": {
+                "not": {
+                  "const": "unknown"
+                }
+              },
+              "direction": {
+                "not": {
+                  "const": "unknown"
+                }
+              },
+              "materiality": {
+                "not": {
+                  "const": "unknown"
+                }
+              },
+              "relevance": {
+                "not": {
+                  "const": "unknown"
+                }
+              },
+              "reason_codes": {
+                "items": {
+                  "$ref": "#/$defs/extractionReasonCode"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reasonCode": {
+      "enum": [
+        "earnings_above_consensus",
+        "earnings_below_consensus",
+        "earnings_mixed",
+        "guidance_raised",
+        "guidance_lowered",
+        "guidance_reiterated",
+        "deal_announced",
+        "contract_awarded",
+        "regulatory_action",
+        "legal_development",
+        "management_change",
+        "product_update",
+        "counterparty_impact",
+        "competitive_impact",
+        "sector_readthrough",
+        "not_company_specific",
+        "unverified_claim",
+        "forward_looking_statement",
+        "insufficient_source_detail",
+        "ambiguous_ticker_attribution",
+        "conflicting_information",
+        "unsupported_event_type"
+      ]
+    },
+    "extractionReasonCode": {
+      "enum": [
+        "earnings_above_consensus",
+        "earnings_below_consensus",
+        "earnings_mixed",
+        "guidance_raised",
+        "guidance_lowered",
+        "guidance_reiterated",
+        "deal_announced",
+        "contract_awarded",
+        "regulatory_action",
+        "legal_development",
+        "management_change",
+        "product_update",
+        "counterparty_impact",
+        "competitive_impact",
+        "sector_readthrough",
+        "not_company_specific",
+        "unverified_claim",
+        "forward_looking_statement"
+      ]
+    },
+    "abstainReasonCode": {
+      "enum": [
+        "insufficient_source_detail",
+        "ambiguous_ticker_attribution",
+        "conflicting_information",
+        "unsupported_event_type"
+      ]
+    }
+  }
+}
