@@ -25,35 +25,57 @@ public final class SharedContractValidator {
   private SharedContractValidator() {}
 
   public static List<Violation> validate(Path schemaPath, Path payloadPath) throws IOException {
-    String schemaData = Files.readString(schemaPath);
-    String payloadData = Files.readString(payloadPath);
+    return compile(Files.readString(schemaPath)).validate(Files.readString(payloadPath));
+  }
+
+  public static List<Violation> validate(String schemaData, String payloadData) throws IOException {
+    return compile(schemaData).validate(payloadData);
+  }
+
+  /** Compiles and parses authoritative schema data for reuse across payload validations. */
+  public static CompiledContract compile(String schemaData) throws IOException {
+    JsonNode schemaDocument = JSON_MAPPER.readTree(schemaData);
     Schema schema = SCHEMA_REGISTRY.getSchema(schemaData, InputFormat.JSON);
+    return new CompiledContract(schema, schemaDocument);
+  }
 
-    List<Violation> violations =
-        new ArrayList<>(
-            schema
-                .validate(
-                    payloadData,
-                    InputFormat.JSON,
-                    executionContext ->
-                        executionContext.executionConfig(
-                            executionConfig -> executionConfig.formatAssertionsEnabled(true)))
-                .stream()
-                .map(
-                    error ->
-                        new Violation(
-                            error.getKeyword(),
-                            error.getInstanceLocation().toString(),
-                            error.getMessage()))
-                .toList());
+  public static final class CompiledContract {
 
-    addUniqueByViolations(
-        JSON_MAPPER.readTree(schemaData), JSON_MAPPER.readTree(payloadData), violations);
-    violations.sort(
-        Comparator.comparing(Violation::instancePath)
-            .thenComparing(Violation::keyword)
-            .thenComparing(Violation::message));
-    return List.copyOf(violations);
+    private final Schema schema;
+    private final JsonNode schemaDocument;
+
+    private CompiledContract(Schema schema, JsonNode schemaDocument) {
+      this.schema = schema;
+      this.schemaDocument = schemaDocument;
+    }
+
+    public List<Violation> validate(String payloadData) throws IOException {
+      JsonNode payload = JSON_MAPPER.readTree(payloadData);
+      List<Violation> violations =
+          new ArrayList<>(
+              schema
+                  .validate(
+                      payloadData,
+                      InputFormat.JSON,
+                      executionContext ->
+                          executionContext.executionConfig(
+                              executionConfig -> executionConfig.formatAssertionsEnabled(true)))
+                  .stream()
+                  .map(
+                      error ->
+                          new Violation(
+                              error.getKeyword(),
+                              error.getInstanceLocation().toString(),
+                              error.getMessage()))
+                  .toList());
+
+      addUniqueByViolations(schemaDocument, payload, violations);
+      violations.sort(
+          Comparator.comparing(Violation::instancePath)
+              .thenComparing(Violation::keyword)
+              .thenComparing(Violation::message));
+      return List.copyOf(violations);
+    }
   }
 
   private static void addUniqueByViolations(

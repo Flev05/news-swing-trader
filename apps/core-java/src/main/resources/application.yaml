@@ -12,3 +12,8 @@ spring:
     default-schema: trader
     schemas: trader
     locations: classpath:db/migration
+
+trader:
+  news:
+    ingestion:
+      pending-capacity: 1000

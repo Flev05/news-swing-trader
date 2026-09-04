@@ -84,6 +84,20 @@ class SharedContractCorpusTest {
         .containsExactlyInAnyOrderElementsOf(intendedRules);
   }
 
+  @Test
+  void compiledContractCanBeReusedAcrossPayloads() throws IOException {
+    Path schema = REPOSITORY_ROOT.resolve("contracts/v1/news-event.schema.json");
+    Path valid =
+        REPOSITORY_ROOT.resolve("tests/fixtures/contracts/v1/valid/news-event/single-ticker.json");
+    Path invalid =
+        REPOSITORY_ROOT.resolve(
+            "tests/fixtures/contracts/v1/invalid/news-event/missing-content-hash.json");
+    var contract = SharedContractValidator.compile(Files.readString(schema));
+
+    assertThat(contract.validate(Files.readString(valid))).isEmpty();
+    assertThat(contract.validate(Files.readString(invalid))).isNotEmpty();
+  }
+
   static Stream<Arguments> contractCases() throws IOException {
     JsonNode cases = JSON_MAPPER.readTree(Files.readString(CORPUS)).get("cases");
 

@@ -1,11 +1,11 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **Milestone 2A**: Milestone 1 contracts plus immutable PostgreSQL news
+repository is currently at **Milestone 2B1**: Milestone 1 contracts plus immutable PostgreSQL news
 revision persistence, deterministic content hashing, internal duplicate/conflict handling, and
-atomic pending-job creation.
+atomic pending-job creation, and a transactional application-level ingestion coordinator.
 
-It has no HTTP ingestion endpoint, admission policy, job claiming, worker execution, signal
+It has no HTTP ingestion endpoint, job claiming, worker execution, signal
 generation, broker integration, model download, external AI access, risk decisions, or order
 intents.
 
