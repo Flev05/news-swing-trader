@@ -2,14 +2,16 @@
 
 ## Scope
 
-This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current milestone is tooling only: it has no news workflow, schemas, broker integration, orders, positions, model download, or external AI access.
+This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current milestone is M2B2A: authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, and a loopback-only local HTTP business API are present.
+
+It has no worker claiming or execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access.
 
 ## Architecture boundaries
 
 - `apps/core-java` is the Java 21 modular-monolith scaffold.
 - `apps/ai-worker` is the Python 3.12 local-worker scaffold.
-- `contracts` will hold the only authoritative cross-language contracts beginning in Milestone 1.
-- `infra` contains local infrastructure only. PostgreSQL is the sole Compose service in Milestone 0.
+- `contracts` holds the only authoritative cross-language contracts.
+- `infra` contains local infrastructure only. PostgreSQL is the sole Compose service.
 - Never add live-trading, broker-submission, Alpaca, external-AI, or credential-handling code without an explicitly approved milestone.
 
 ## Commands
@@ -22,6 +24,7 @@ make doctor
 make format
 make lint
 make test
+make migration-smoke
 ```
 
 Use `make db-up`, `make db-logs`, and `make db-down` for the local PostgreSQL container.

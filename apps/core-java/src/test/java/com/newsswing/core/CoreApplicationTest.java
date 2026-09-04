@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class CoreApplicationTest {
 
   @Test
-  void exposesTheMilestoneZeroApplicationType() {
+  void exposesTheCoreApplicationType() {
     assertEquals("CoreApplication", CoreApplication.class.getSimpleName());
   }
 }

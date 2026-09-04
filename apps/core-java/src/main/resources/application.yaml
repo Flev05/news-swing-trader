@@ -2,7 +2,15 @@ spring:
   application:
     name: news-swing-core
   main:
-    web-application-type: none
+    web-application-type: servlet
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    deserialization:
+      fail-on-unknown-properties: true
+    factory:
+      constraints:
+        read:
+          max-document-length: ${TRADER_NEWS_API_MAX_REQUEST_BYTES:1048576}
   datasource:
     url: ${TRADER_DATABASE_URL:jdbc:postgresql://127.0.0.1:15432/news_swing}
     username: ${TRADER_DATABASE_USER:news_swing}
@@ -13,7 +21,22 @@ spring:
     schemas: trader
     locations: classpath:db/migration
 
+server:
+  address: 127.0.0.1
+  port: ${TRADER_HTTP_PORT:8080}
+  max-http-request-header-size: 8KB
+  tomcat:
+    max-swallow-size: ${TRADER_NEWS_API_MAX_REQUEST_BYTES:1048576}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    whitelabel:
+      enabled: false
+
 trader:
   news:
     ingestion:
       pending-capacity: 1000
+    api:
+      max-request-bytes: ${TRADER_NEWS_API_MAX_REQUEST_BYTES:1048576}

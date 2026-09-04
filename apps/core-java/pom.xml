@@ -15,7 +15,7 @@
     <artifactId>core-java</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>core-java</name>
-    <description>Java core scaffold with Milestone 1 shared-contract validation</description>
+    <description>Java core with durable news ingestion and loopback HTTP API</description>
 
     <properties>
         <java.version>21</java.version>
@@ -32,6 +32,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

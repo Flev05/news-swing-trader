@@ -1,13 +1,12 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **Milestone 2B1**: Milestone 1 contracts plus immutable PostgreSQL news
-revision persistence, deterministic content hashing, internal duplicate/conflict handling, and
-atomic pending-job creation, and a transactional application-level ingestion coordinator.
+repository is currently at **Milestone M2B2A**: authoritative v1 contracts, immutable PostgreSQL
+news revisions, transactional ingestion admission, and a loopback-only local HTTP business API.
 
-It has no HTTP ingestion endpoint, job claiming, worker execution, signal
-generation, broker integration, model download, external AI access, risk decisions, or order
-intents.
+It has no Actuator or health endpoint, restart recovery test, job claiming, worker execution,
+signal generation, broker integration, model download, external AI access, risk decisions, or
+order intents.
 
 The contract definitions and their encoded semantic invariants are documented in
 `contracts/README.md`.
@@ -31,6 +30,7 @@ make doctor
 make format
 make lint
 make test
+make migration-smoke
 ```
 
 `make bootstrap` downloads a checksum-verified, repository-local `uv` binary, installs an isolated Python 3.12.14 runtime under ignored `.tools/`, creates the worker virtual environment, and writes `apps/ai-worker/uv.lock`.
@@ -63,11 +63,16 @@ Direct dependency and tool versions are pinned only after they resolve and pass 
 
 The Spring Boot BOM manages Flyway, PostgreSQL JDBC, and Testcontainers versions; their resolved versions are visible through `./mvnw -f apps/core-java dependency:tree`.
 
-## Milestone 1 verification
+## M2B2A boundary
 
-- Both Java and Python validate every case in `tests/fixtures/contracts/v1/corpus.json` against the same schemas.
-- Java compilation and the existing Flyway/Testcontainers migration smoke test.
-- Python formatting, linting, type checking, contract tests, and deterministic fake-backend tests.
-- Docker Compose syntax and PostgreSQL health checks.
+- The servlet API binds only to `127.0.0.1`; external address or separate management-listener
+  configuration fails startup.
+- The API accepts strict News Event v1 input, computes the content hash server-side, and returns
+  durable admission and current job status from PostgreSQL.
+- Business success and RFC 9457 problem responses are not cacheable.
+- M2B2A deliberately excludes Actuator, health endpoints, and restart recovery verification; those
+  are the M2B2B checkpoint.
 
-Later milestones add ingestion, durable jobs, local inference, deterministic decisioning, DRY_RUN intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from this milestone.
+Later milestones add operations recovery, local inference, deterministic decisioning, DRY_RUN
+intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from
+this checkpoint.
