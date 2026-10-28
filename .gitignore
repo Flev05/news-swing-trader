@@ -1,4 +1,14 @@
+# Local environment values; keep intentional example/template files trackable.
 .env
+.env.*
+!.env.example
+!.env.*.example
+!.env.template
+!.env.*.template
+!.env.sample
+!.env.*.sample
+!.env.dist
+!.env.*.dist
 .tools/
 .mvn/timing.properties
 apps/ai-worker/.venv/
@@ -9,3 +19,34 @@ apps/ai-worker/**/__pycache__/
 apps/core-java/target/
 *.log
 .ruff_cache/
+
+# Local database state and exports, not SQL source or nested test fixtures.
+/backups/
+/infra/postgres-data/
+/*.dump
+/*.pgdump
+/*.sql.gz
+/backup*.sql
+/dump*.sql
+/*.sqlite
+/*.sqlite3
+/*.db
+
+# Downloaded weights belong in these local model directories.
+/models/weights/
+/models/checkpoints/
+/models/**/*.gguf
+/models/**/*.safetensors
+/models/**/*.onnx
+/models/**/*.pt
+/models/**/*.pth
+/*.gguf
+/*.safetensors
+
+# Local private-key artifacts; do not blanket-ignore .pem, .key, or certificates.
+/.ssh/
+/secrets/*.key
+/secrets/private*.pem
+/secrets/*-key.pem
+/secrets/*.p12
+/secrets/*.pfx

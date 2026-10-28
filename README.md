@@ -14,11 +14,12 @@ The contract definitions and their encoded semantic invariants are documented in
 
 ## Environment
 
-Use the Ubuntu WSL distribution and the Linux filesystem:
+Open the Ubuntu WSL distribution and use a checkout on its Linux filesystem.
+This example assumes the checkout is under `~/code/`; adjust the directory if needed:
 
 ```bash
 wsl.exe -d Ubuntu
-cd /home/xeemt/code/news-swing-trader
+cd "$HOME/code/news-swing-trader"
 ```
 
 The preflight verified Java 21.0.12, Maven 3.9.12, Docker Engine 29.5.3, Docker Compose 5.1.4, and a cached `postgres:18.6` image. Python 3.12 is provisioned locally by `make bootstrap`; Ubuntu's system Python 3.14 is left unchanged.
