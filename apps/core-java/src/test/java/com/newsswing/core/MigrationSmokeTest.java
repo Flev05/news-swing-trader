@@ -29,19 +29,19 @@ class MigrationSmokeTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  void appliesTheM2aPersistenceMigration() {
+  void appliesTheM3aSchemaMigration() {
     String milestone =
         jdbcTemplate.queryForObject(
             "SELECT metadata_value FROM trader.platform_metadata WHERE metadata_key = 'milestone'",
             String.class);
-    assertThat(milestone).isEqualTo("2A");
+    assertThat(milestone).isEqualTo("3A");
     assertThat(
             jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables "
                     + "WHERE table_schema = 'trader' "
                     + "AND table_name IN ('news_items', 'news_revisions', 'inference_jobs', "
-                    + "'queue_admission_locks')",
+                    + "'queue_admission_locks', 'inference_results')",
                 Integer.class))
-        .isEqualTo(4);
+        .isEqualTo(5);
   }
 }

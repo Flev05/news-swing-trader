@@ -1,5 +1,6 @@
 package com.newsswing.core.news.ingestion;
 
+import com.newsswing.core.inference.jobs.InferenceJobPolicy;
 import com.newsswing.core.news.domain.NewsCanonicalizer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(NewsIngestionProperties.class)
+@EnableConfigurationProperties({NewsIngestionProperties.class, InferenceJobPolicy.class})
 class NewsIngestionConfiguration {
 
   @Bean

@@ -1,5 +1,6 @@
 package com.newsswing.core.news.ingestion;
 
+import com.newsswing.core.inference.jobs.JobStatus;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,10 +31,5 @@ public sealed interface NewsIngestionResult
   enum StoredAdmissionState {
     QUEUED,
     OUT_OF_ORDER
-  }
-
-  enum JobStatus {
-    PENDING,
-    SUPERSEDED
   }
 }

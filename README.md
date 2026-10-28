@@ -1,7 +1,8 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **Milestone M2B2B**: authoritative v1 contracts, immutable PostgreSQL
+repository is currently at **M3A1**: durable inference-job schema support and ingestion/read
+compatibility extend the M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
 news revisions, transactional ingestion admission, a loopback-only local HTTP business API,
 Actuator health, and durable restart recovery acceptance tests.
 
@@ -68,7 +69,7 @@ The direct `spring-boot-starter-actuator` dependency supplies the built-in healt
 No metrics exporter or additional test dependency is added. The Spring Boot BOM manages Actuator,
 Flyway, PostgreSQL JDBC, and Testcontainers versions; their resolved versions are visible through `./mvnw -f apps/core-java dependency:tree`.
 
-## M2B2B boundary
+## Existing HTTP and health boundary
 
 - The servlet API binds only to `127.0.0.1`; external address or separate management-listener
   configuration fails startup.
@@ -101,8 +102,32 @@ unchanged PostgreSQL instance and migrated schema. It exercises ingestion and du
 reads over real loopback HTTP, then checks stale duplicate resolution, duplicate precedence at
 capacity, capacity rejection, and explicitly ordered durable snapshots. Fixed clocks are registered
 through test configuration outside the application scan. No application-state assertion is retried.
-The V2 schema and its `platform_metadata` milestone `2A` remain unchanged.
+V1 and V2 remain unchanged; V3 advances `platform_metadata.milestone` to `3A`, identifying
+the schema checkpoint rather than completed lifecycle operations.
 
 Later milestones add operations recovery, local inference, deterministic decisioning, DRY_RUN
 intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from
 this checkpoint.
+
+## M3A1 schema and ingestion compatibility
+
+The complete approved M3A lifecycle design is retained in [docs/m3a-design.md](docs/m3a-design.md)
+and [ADR 0010](docs/adr/0010-durable-inference-job-lifecycle.md). Only M3A1 is implemented.
+
+V3 supports PENDING, RUNNING, RETRY_WAIT, SUCCEEDED, FAILED, SUPERSEDED, and EXPIRED, with
+assignment/lease constraints, immutable result storage, provenance checks, and queue indexes.
+Existing V2 revisions, admissions, job identities, and latest pointers are preserved.
+
+Ingestion snapshots `trader.inference.jobs.max-assignments` (positive; default 3 total assignments)
+and `trader.inference.jobs.expected-backend` (fake, llama.cpp, or ollama; default fake).
+These fields are policy metadata, not implemented backends. Replacing a pending predecessor credits
+one pending slot; other states credit none. Successful admission supersedes nonterminal predecessors
+and revokes ownership atomically; terminal jobs and historical results remain unchanged.
+
+Existing HTTP representations show all statuses without exposing ownership or assignment metadata.
+There are no claim, renewal, failure, recovery, result acceptance, eligible-result-query, or worker
+HTTP implementations; no scheduler or Python changes. Tests construct lifecycle states explicitly
+with SQL. Schema checks alone do not validate the complete Inference Result v1 contract or pair a
+result atomically with SUCCEEDED; those are future Java responsibilities.
+
+Once committed, V3 must not be edited. Subsequent corrections require a new migration.

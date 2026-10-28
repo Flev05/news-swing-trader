@@ -42,6 +42,7 @@ class V1ToM2aMigrationTest {
         .defaultSchema("trader")
         .schemas("trader")
         .locations("classpath:db/migration")
+        .target("2")
         .load()
         .migrate();
 

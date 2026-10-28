@@ -112,7 +112,8 @@ final class HttpAcceptanceSupport {
             "SELECT row_to_json(t)::text FROM (SELECT * FROM trader.queue_admission_locks ORDER BY queue_name) t",
             "SELECT row_to_json(t)::text FROM (SELECT * FROM trader.platform_metadata ORDER BY metadata_key) t",
             "SELECT row_to_json(t)::text FROM (SELECT installed_rank, version, description, type, script, checksum, success FROM trader.flyway_schema_history ORDER BY installed_rank) t",
-            "SELECT row_to_json(t)::text FROM (SELECT table_name, column_name, ordinal_position, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'trader' ORDER BY table_name, ordinal_position) t");
+            "SELECT row_to_json(t)::text FROM (SELECT table_name, column_name, ordinal_position, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'trader' ORDER BY table_name, ordinal_position) t",
+            "SELECT row_to_json(t)::text FROM (SELECT * FROM trader.inference_results ORDER BY job_id) t");
     var snapshot = new ArrayList<List<String>>();
     try (var connection =
         DriverManager.getConnection(

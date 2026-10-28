@@ -2,6 +2,8 @@ package com.newsswing.core.news.ingestion;
 
 import static com.newsswing.core.news.domain.NewsEvents.CanonicalNewsEvent;
 
+import com.newsswing.core.inference.jobs.InferenceJobPolicy;
+import com.newsswing.core.inference.jobs.JobStatus;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -121,7 +123,8 @@ class NewsIngestionRepository {
             """,
             (resultSet, rowNumber) ->
                 new CurrentJob(
-                    resultSet.getObject("job_id", UUID.class), resultSet.getString("status")),
+                    resultSet.getObject("job_id", UUID.class),
+                    JobStatus.valueOf(resultSet.getString("status"))),
             eventId);
     return jobs.isEmpty() ? null : jobs.getFirst();
   }
@@ -177,27 +180,30 @@ class NewsIngestionRepository {
         Timestamp.from(requestNow));
   }
 
-  int supersedePendingJob(UUID previousEventId, UUID replacementEventId, Instant requestNow) {
+  int supersedeActiveJob(UUID previousEventId, UUID replacementEventId, Instant requestNow) {
     return jdbcTemplate.update(
         """
         UPDATE trader.inference_jobs
-        SET status = ?, superseded_at = ?, superseded_by_event_id = ?
-        WHERE news_revision_id = ? AND status = ?
+        SET status = 'SUPERSEDED', superseded_at = ?, superseded_by_event_id = ?,
+            terminal_at = ?, ownership_token = NULL, assignment_inference_id = NULL,
+            assigned_at = NULL, lease_expires_at = NULL
+        WHERE news_revision_id = ? AND status IN ('PENDING', 'RUNNING', 'RETRY_WAIT')
         """,
-        "SUPERSEDED",
         Timestamp.from(requestNow),
         replacementEventId,
-        previousEventId,
-        "PENDING");
+        Timestamp.from(requestNow),
+        previousEventId);
   }
 
-  void insertPendingJob(UUID jobId, CanonicalNewsEvent event, Instant requestNow) {
+  void insertPendingJob(
+      UUID jobId, CanonicalNewsEvent event, Instant requestNow, InferenceJobPolicy policy) {
     jdbcTemplate.update(
         """
         INSERT INTO trader.inference_jobs (
-            job_id, news_revision_id, job_kind, input_schema_version, idempotency_key, status, created_at
+            job_id, news_revision_id, job_kind, input_schema_version, idempotency_key, status,
+            created_at, max_assignments, expected_backend
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         jobId,
         event.eventId(),
@@ -205,7 +211,9 @@ class NewsIngestionRepository {
         "1.0.0",
         event.jobIdempotencyKey(),
         "PENDING",
-        Timestamp.from(requestNow));
+        Timestamp.from(requestNow),
+        policy.maxAssignments(),
+        policy.expectedBackend());
   }
 
   void updateLatestPointer(UUID itemId, UUID eventId, Instant requestNow) {
@@ -231,7 +239,9 @@ class NewsIngestionRepository {
         resultSet.getString("provider_fingerprint"),
         AdmissionState.valueOf(resultSet.getString("admission_state")),
         resultSet.getObject("job_id", UUID.class),
-        resultSet.getString("status"));
+        resultSet.getString("status") == null
+            ? null
+            : JobStatus.valueOf(resultSet.getString("status")));
   }
 }
 
@@ -249,7 +259,7 @@ record ExistingRevision(
     String providerFingerprint,
     AdmissionState admissionState,
     UUID jobId,
-    String jobStatus) {
+    JobStatus jobStatus) {
 
   boolean matches(CanonicalNewsEvent event) {
     return matchesProviderRevision(event)
@@ -265,4 +275,4 @@ record ExistingRevision(
 
 record LatestRevision(UUID eventId, Instant sourceUpdatedAt) {}
 
-record CurrentJob(UUID jobId, String status) {}
+record CurrentJob(UUID jobId, JobStatus status) {}

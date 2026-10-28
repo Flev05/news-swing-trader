@@ -46,7 +46,7 @@ class NewsStatusQueryService {
               ? null
               : new NewsApiModels.RevisionJobResponse(
                   row.jobId(),
-                  row.jobStatus(),
+                  row.jobStatus().name(),
                   row.jobCreatedAt(),
                   row.jobSupersededAt(),
                   row.supersededByEventId());
@@ -64,7 +64,7 @@ class NewsStatusQueryService {
         row.newsEventId(),
         row.jobKind(),
         row.inputSchemaVersion(),
-        row.status(),
+        row.status().name(),
         row.createdAt(),
         row.supersededAt(),
         row.supersededByEventId());

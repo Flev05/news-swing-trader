@@ -85,6 +85,7 @@ class NewsIngestionValidationTest {
         repository,
         clock,
         new NewsIngestionProperties(1),
+        new com.newsswing.core.inference.jobs.InferenceJobPolicy(3, "fake"),
         transactionManager);
   }
 

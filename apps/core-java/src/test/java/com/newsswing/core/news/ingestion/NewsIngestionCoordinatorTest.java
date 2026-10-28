@@ -6,6 +6,7 @@ import static com.newsswing.core.news.domain.NewsEvents.UnhashedNewsEvent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.newsswing.core.inference.jobs.JobStatus;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -60,10 +61,11 @@ class NewsIngestionCoordinatorTest {
     jdbcTemplate.update(
         """
         UPDATE trader.inference_jobs
-        SET status = ?, superseded_at = ?, superseded_by_event_id = news_revision_id
+        SET status = ?, superseded_at = ?, terminal_at = ?, superseded_by_event_id = news_revision_id
         WHERE status = ?
         """,
         "SUPERSEDED",
+        Timestamp.from(NOW),
         Timestamp.from(NOW),
         "PENDING");
   }
@@ -83,8 +85,7 @@ class NewsIngestionCoordinatorTest {
     assertThat(duplicate.storedAdmissionState())
         .isEqualTo(NewsIngestionResult.StoredAdmissionState.QUEUED);
     assertThat(duplicate.currentJob()).isPresent();
-    assertThat(duplicate.currentJob().orElseThrow().status())
-        .isEqualTo(NewsIngestionResult.JobStatus.PENDING);
+    assertThat(duplicate.currentJob().orElseThrow().status()).isEqualTo(JobStatus.PENDING);
   }
 
   @Test

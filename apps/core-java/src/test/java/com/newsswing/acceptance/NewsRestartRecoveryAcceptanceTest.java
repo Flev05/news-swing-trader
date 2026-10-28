@@ -272,13 +272,13 @@ class NewsRestartRecoveryAcceptanceTest {
         .hasSize(1);
     assertThat(rows.get(4)).hasSize(1);
     assertThat(app.mapper.readTree(rows.get(4).getFirst()).path("metadata_value").stringValue())
-        .isEqualTo("2A");
+        .isEqualTo("3A");
     assertThat(
             rows.get(5).stream()
                 .map(app.mapper::readTree)
                 .filter(row -> !row.path("version").isNull())
                 .map(row -> row.path("version").stringValue()))
-        .containsExactly("1", "2");
+        .containsExactly("1", "2", "3");
   }
 
   private static String event(

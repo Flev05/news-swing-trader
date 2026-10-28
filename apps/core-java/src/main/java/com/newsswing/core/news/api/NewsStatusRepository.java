@@ -1,5 +1,6 @@
 package com.newsswing.core.news.api;
 
+import com.newsswing.core.inference.jobs.JobStatus;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -56,7 +57,9 @@ class NewsStatusRepository {
         resultSet.getString("admission_state"),
         instant(resultSet.getTimestamp("persisted_at")),
         resultSet.getObject("job_id", UUID.class),
-        resultSet.getString("status"),
+        resultSet.getString("status") == null
+            ? null
+            : JobStatus.valueOf(resultSet.getString("status")),
         instant(resultSet.getTimestamp("created_at")),
         instant(resultSet.getTimestamp("superseded_at")),
         resultSet.getObject("superseded_by_event_id", UUID.class));
@@ -68,7 +71,9 @@ class NewsStatusRepository {
         resultSet.getObject("news_revision_id", UUID.class),
         resultSet.getString("job_kind"),
         resultSet.getString("input_schema_version"),
-        resultSet.getString("status"),
+        resultSet.getString("status") == null
+            ? null
+            : JobStatus.valueOf(resultSet.getString("status")),
         instant(resultSet.getTimestamp("created_at")),
         instant(resultSet.getTimestamp("superseded_at")),
         resultSet.getObject("superseded_by_event_id", UUID.class));
@@ -85,7 +90,7 @@ record RevisionRow(
     String admissionState,
     Instant persistedAt,
     UUID jobId,
-    String jobStatus,
+    JobStatus jobStatus,
     Instant jobCreatedAt,
     Instant jobSupersededAt,
     UUID supersededByEventId) {}
@@ -95,7 +100,7 @@ record JobRow(
     UUID newsEventId,
     String jobKind,
     String inputSchemaVersion,
-    String status,
+    JobStatus status,
     Instant createdAt,
     Instant supersededAt,
     UUID supersededByEventId) {}

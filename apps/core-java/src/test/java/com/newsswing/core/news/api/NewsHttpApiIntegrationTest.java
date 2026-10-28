@@ -76,10 +76,11 @@ class NewsHttpApiIntegrationTest {
     jdbcTemplate.update(
         """
         UPDATE trader.inference_jobs
-        SET status = ?, superseded_at = ?, superseded_by_event_id = news_revision_id
+        SET status = ?, superseded_at = ?, terminal_at = ?, superseded_by_event_id = news_revision_id
         WHERE status = ?
         """,
         "SUPERSEDED",
+        Timestamp.from(NOW),
         Timestamp.from(NOW),
         "PENDING");
   }
@@ -718,6 +719,71 @@ class NewsHttpApiIntegrationTest {
         """
         .formatted(
             eventId, UUID.randomUUID(), newsId, revisionId, newsId, updateSeconds, revisionId);
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(com.newsswing.core.inference.jobs.JobStatus.class)
+  void representsEveryDurableStatusWithoutOwnershipMetadata(
+      com.newsswing.core.inference.jobs.JobStatus status) throws Exception {
+    String newsId = "http-lifecycle-" + UUID.randomUUID();
+    UUID eventId = UUID.randomUUID();
+    String request = event(eventId, newsId, "revision-1", 0);
+    JsonNode admission = json(post(request));
+    UUID jobId = UUID.fromString(admission.path("job").path("job_id").stringValue());
+    if (status == com.newsswing.core.inference.jobs.JobStatus.SUPERSEDED) {
+      assertThat(post(event(UUID.randomUUID(), newsId, "revision-2", 10)).statusCode())
+          .isEqualTo(202);
+    } else {
+      com.newsswing.support.InferenceJobFixtures.state(jdbcTemplate, jobId, status, NOW);
+    }
+    String before = com.newsswing.support.InferenceJobFixtures.snapshot(jdbcTemplate, jobId);
+    DbCounts beforeCounts = counts();
+    var jobResponse = get("/api/v1/inference-jobs/" + jobId);
+    assertThat(jobResponse.statusCode()).isEqualTo(200);
+    assertSuccessJson(jobResponse);
+    JsonNode job = json(jobResponse);
+    assertFields(
+        job,
+        "job_id",
+        "news_event_id",
+        "job_kind",
+        "input_schema_version",
+        "current_status",
+        "created_at",
+        "superseded_at",
+        "superseded_by_event_id");
+    assertThat(job.path("current_status").stringValue()).isEqualTo(status.name());
+    var revisionResponse = get("/api/v1/news-events/" + eventId);
+    assertThat(revisionResponse.statusCode()).isEqualTo(200);
+    assertSuccessJson(revisionResponse);
+    JsonNode revisionJob = json(revisionResponse).path("job");
+    assertFields(
+        revisionJob,
+        "job_id",
+        "current_status",
+        "created_at",
+        "superseded_at",
+        "superseded_by_event_id");
+    assertThat(revisionJob.path("current_status").stringValue()).isEqualTo(status.name());
+    for (String duplicateRequest :
+        java.util.List.of(
+            request, request.replace(eventId.toString(), UUID.randomUUID().toString()))) {
+      var response = post(duplicateRequest);
+      assertThat(response.statusCode()).isEqualTo(200);
+      assertSuccessJson(response);
+      JsonNode duplicate = json(response);
+      assertFields(duplicate.path("job"), "job_id", "current_status");
+      assertThat(duplicate.path("job").path("current_status").stringValue())
+          .isEqualTo(status.name());
+      assertThat(duplicate.path("stored_event_id").stringValue()).isEqualTo(eventId.toString());
+    }
+    if (status != com.newsswing.core.inference.jobs.JobStatus.SUPERSEDED) {
+      assertThat(job.path("superseded_at").isNull()).isTrue();
+      assertThat(job.path("superseded_by_event_id").isNull()).isTrue();
+    }
+    assertThat(counts()).isEqualTo(beforeCounts);
+    assertThat(com.newsswing.support.InferenceJobFixtures.snapshot(jdbcTemplate, jobId))
+        .isEqualTo(before);
   }
 
   @TestConfiguration(proxyBeanMethods = false)

@@ -2,9 +2,11 @@
 
 ## Scope
 
-This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current milestone is M2B2B: authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, a loopback-only local HTTP business API, narrowly scoped Actuator health, and durable restart recovery acceptance tests are present.
+This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current checkpoint is M3A1: durable inference-job schema support and ingestion/read compatibility extend M2B2B; authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, a loopback-only local HTTP business API, narrowly scoped Actuator health, and durable restart recovery acceptance tests are present.
 
-It has no worker claiming or execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access.
+Metadata 3A identifies the schema checkpoint, not completed lifecycle functionality. The complete M3A design is in docs/m3a-design.md. V1/V2 and, once committed, V3 are immutable migration history; corrections require a new migration.
+
+It has no claim, renewal, failure, recovery, result-acceptance or eligible-result-query operations, worker endpoints, worker claiming or execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access.
 
 ## Architecture boundaries
 

@@ -6,6 +6,7 @@ import static com.newsswing.core.news.domain.NewsEvents.UnhashedNewsEvent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.newsswing.core.inference.jobs.JobStatus;
 import com.newsswing.core.news.domain.NewsCanonicalizer;
 import com.newsswing.core.news.domain.NewsEvents.CanonicalNewsEvent;
 import java.sql.Timestamp;
@@ -72,10 +73,11 @@ class NewsIngestionAcceptanceTest {
     jdbcTemplate.update(
         """
         UPDATE trader.inference_jobs
-        SET status = ?, superseded_at = ?, superseded_by_event_id = news_revision_id
+        SET status = ?, superseded_at = ?, terminal_at = ?, superseded_by_event_id = news_revision_id
         WHERE status = ?
         """,
         "SUPERSEDED",
+        Timestamp.from(NOW),
         Timestamp.from(NOW),
         "PENDING");
     clock.reset(NOW);
@@ -167,8 +169,7 @@ class NewsIngestionAcceptanceTest {
     assertThat(pendingDuplicate.storedAdmissionState())
         .isEqualTo(NewsIngestionResult.StoredAdmissionState.QUEUED);
     assertThat(pendingDuplicate.currentJob()).isPresent();
-    assertThat(pendingDuplicate.currentJob().orElseThrow().status())
-        .isEqualTo(NewsIngestionResult.JobStatus.PENDING);
+    assertThat(pendingDuplicate.currentJob().orElseThrow().status()).isEqualTo(JobStatus.PENDING);
 
     clock.reset(NOW);
     coordinator.ingest(event(newsId, "revision-2", 10));
@@ -176,7 +177,7 @@ class NewsIngestionAcceptanceTest {
     var supersededDuplicate = (NewsIngestionResult.Duplicate) coordinator.ingest(original);
     assertThat(supersededDuplicate.currentJob()).isPresent();
     assertThat(supersededDuplicate.currentJob().orElseThrow().status())
-        .isEqualTo(NewsIngestionResult.JobStatus.SUPERSEDED);
+        .isEqualTo(JobStatus.SUPERSEDED);
   }
 
   @Test
@@ -188,6 +189,7 @@ class NewsIngestionAcceptanceTest {
             repository,
             clock,
             new NewsIngestionProperties(0),
+            new com.newsswing.core.inference.jobs.InferenceJobPolicy(3, "fake"),
             transactionManager);
     var rejected = event("zero-capacity-" + UUID.randomUUID(), "revision-1", 0);
 
@@ -334,6 +336,7 @@ class NewsIngestionAcceptanceTest {
             new BarrierBeforeOutOfOrderInsertRepository(jdbcTemplate, sharedEventId),
             clock,
             new NewsIngestionProperties(1),
+            new com.newsswing.core.inference.jobs.InferenceJobPolicy(3, "fake"),
             transactionManager);
     List<NewsIngestionResult> outcomes = new ArrayList<>();
     List<Throwable> failures = new ArrayList<>();
@@ -364,10 +367,11 @@ class NewsIngestionAcceptanceTest {
     jdbcTemplate.update(
         """
         UPDATE trader.inference_jobs
-        SET status = ?, superseded_at = ?, superseded_by_event_id = news_revision_id
+        SET status = ?, superseded_at = ?, terminal_at = ?, superseded_by_event_id = news_revision_id
         WHERE status = ?
         """,
         "SUPERSEDED",
+        Timestamp.from(NOW),
         Timestamp.from(NOW),
         "PENDING");
   }

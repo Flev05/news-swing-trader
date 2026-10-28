@@ -4,6 +4,8 @@ import static com.newsswing.core.news.domain.NewsEvents.CanonicalNewsEvent;
 import static com.newsswing.core.news.domain.NewsEvents.UnhashedNewsEvent;
 
 import com.newsswing.core.contracts.SharedContractValidator.Violation;
+import com.newsswing.core.inference.jobs.InferenceJobPolicy;
+import com.newsswing.core.inference.jobs.JobStatus;
 import com.newsswing.core.news.domain.NewsCanonicalizationException;
 import com.newsswing.core.news.domain.NewsCanonicalizer;
 import java.time.Clock;
@@ -26,6 +28,7 @@ public final class NewsIngestionCoordinator {
   private final NewsIngestionRepository repository;
   private final Clock clock;
   private final int pendingCapacity;
+  private final InferenceJobPolicy jobPolicy;
   private final TransactionTemplate writeTransactions;
   private final TransactionTemplate readOnlyTransactions;
 
@@ -35,12 +38,14 @@ public final class NewsIngestionCoordinator {
       NewsIngestionRepository repository,
       Clock newsIngestionClock,
       NewsIngestionProperties properties,
+      InferenceJobPolicy jobPolicy,
       PlatformTransactionManager transactionManager) {
     this.canonicalizer = canonicalizer;
     this.contractValidator = contractValidator;
     this.repository = repository;
     this.clock = newsIngestionClock;
     this.pendingCapacity = properties.pendingCapacity();
+    this.jobPolicy = jobPolicy;
     this.writeTransactions = new TransactionTemplate(transactionManager);
     this.readOnlyTransactions = new TransactionTemplate(transactionManager);
     this.readOnlyTransactions.setReadOnly(true);
@@ -128,12 +133,15 @@ public final class NewsIngestionCoordinator {
     CurrentJob previousJob = null;
     if (latest != null) {
       previousJob = repository.findJobForUpdate(latest.eventId());
-      if (previousJob == null || !"PENDING".equals(previousJob.status())) {
-        throw new IllegalStateException("Latest queued revision does not have a PENDING job");
+      if (previousJob == null) {
+        throw new IllegalStateException("Latest queued revision does not have a job");
       }
     }
 
-    long projectedPending = repository.countPendingJobs() + 1L - (previousJob == null ? 0L : 1L);
+    long projectedPending =
+        repository.countPendingJobs()
+            + 1L
+            - (previousJob != null && previousJob.status() == JobStatus.PENDING ? 1L : 0L);
     if (projectedPending > pendingCapacity) {
       throw new NewsIngestionException(
           NewsIngestionException.Code.CAPACITY_EXCEEDED,
@@ -142,11 +150,12 @@ public final class NewsIngestionCoordinator {
 
     repository.insertRevision(itemId, event, AdmissionState.QUEUED, requestNow);
     if (previousJob != null
-        && repository.supersedePendingJob(latest.eventId(), event.eventId(), requestNow) != 1) {
-      throw new IllegalStateException("Expected exactly one PENDING job to be superseded");
+        && !previousJob.status().isTerminal()
+        && repository.supersedeActiveJob(latest.eventId(), event.eventId(), requestNow) != 1) {
+      throw new IllegalStateException("Expected exactly one nonterminal job to be superseded");
     }
     UUID jobId = UUID.randomUUID();
-    repository.insertPendingJob(jobId, event, requestNow);
+    repository.insertPendingJob(jobId, event, requestNow, jobPolicy);
     repository.updateLatestPointer(itemId, event.eventId(), requestNow);
     return new NewsIngestionResult.Queued(event.eventId(), itemId, jobId);
   }
@@ -203,8 +212,7 @@ public final class NewsIngestionCoordinator {
         existing.jobId() == null
             ? Optional.empty()
             : Optional.of(
-                new NewsIngestionResult.JobSnapshot(
-                    existing.jobId(), NewsIngestionResult.JobStatus.valueOf(existing.jobStatus())));
+                new NewsIngestionResult.JobSnapshot(existing.jobId(), existing.jobStatus()));
     return new NewsIngestionResult.Duplicate(
         requestedEventId,
         existing.eventId(),

@@ -65,6 +65,10 @@ management:
       enabled: true
 
 trader:
+  inference:
+    jobs:
+      max-assignments: 3
+      expected-backend: fake
   news:
     ingestion:
       pending-capacity: 1000

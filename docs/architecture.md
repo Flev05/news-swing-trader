@@ -1,9 +1,9 @@
-# M2B2B Architecture
+# M3A1 Architecture
 
 The Java 21 modular monolith owns transactional news ingestion and immutable PostgreSQL revisions.
 The Python 3.12 worker remains an independent scaffold; there is no cross-process workflow or worker
-execution. PostgreSQL 18.6 is the sole Compose service. ADRs 0007–0009 record persistence, admission,
-and the loopback HTTP business API decisions.
+execution. PostgreSQL 18.6 is the sole Compose service. ADRs 0007–0010 record persistence, admission,
+the loopback HTTP business API, and durable lifecycle schema decisions.
 
 ```mermaid
 flowchart LR
@@ -28,9 +28,15 @@ flowchart LR
 - Ingestion resolves immutable revision identity before freshness or capacity policy. Item locks
   serialize revision ordering; the durable NEWS_INFERENCE mutex serializes pending admission.
   Supersession, replacement insertion, and latest-pointer updates share one transaction.
-- News admission is immutable (`QUEUED` or `OUT_OF_ORDER`); job status is mutable (`PENDING` or
-  `SUPERSEDED`). Business reads reconstruct state from PostgreSQL, not controller memory.
-- Flyway V1 and V2 remain the entire schema history; `platform_metadata.milestone` remains `2A`.
+- News admission is immutable (`QUEUED` or `OUT_OF_ORDER`); the schema supports all seven M3A job states.
+  M3A1 implements ingestion creation and supersession only. Business reads reconstruct state from PostgreSQL, not controller memory.
+- Flyway V1/V2 are unchanged; V3 adds lifecycle fields, constraints, indexes and immutable results.
+  `platform_metadata.milestone=3A` identifies schema support, not completed lifecycle operations.
+  The complete future behavior is recorded in [the M3A design reference](m3a-design.md).
+- Ingestion uses item -> queue mutex -> predecessor job locks and credits a capacity slot only
+  for a PENDING predecessor. It revokes nonterminal ownership on successful supersession;
+  terminal jobs stay unchanged. Positive assignment limits and approved backend names are
+  snapshotted per job. Reads expose current status without ownership or assignment metadata.
 - All HTTP routes share one server bound exactly to `127.0.0.1`. External binding and separate
   management-listener configuration fail startup; the existing `-1` management-port opt-out remains.
 - Actuator exposes only `/actuator/health` and its liveness/readiness groups. Liveness checks only
@@ -40,6 +46,6 @@ flowchart LR
   Database access denial is restored through resource cleanup. Only post-restoration readiness may
   poll with a deadline. Restart coverage closes one complete context before starting another against
   the same live database and schema, comparing explicitly ordered durable rows and stable metadata.
-- The fake backend is a deterministic test seam. Job claiming, leases, retries, inference, model
+- The fake backend is a deterministic test seam. Claiming, renewal, failure, recovery, result acceptance, eligible-result queries, inference, model
   integration, Redis, broker submission, signals, risk, portfolio behavior, orders, and external AI
   access remain absent.
