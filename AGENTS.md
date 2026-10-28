@@ -2,7 +2,7 @@
 
 ## Scope
 
-This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current milestone is M2B2A: authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, and a loopback-only local HTTP business API are present.
+This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current milestone is M2B2B: authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, a loopback-only local HTTP business API, narrowly scoped Actuator health, and durable restart recovery acceptance tests are present.
 
 It has no worker claiming or execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access.
 

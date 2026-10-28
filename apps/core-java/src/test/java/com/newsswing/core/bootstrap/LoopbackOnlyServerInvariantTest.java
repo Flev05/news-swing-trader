@@ -61,7 +61,10 @@ class LoopbackOnlyServerInvariantTest {
   @Test
   void rejectsManagementListenerConfiguration() {
     for (String property :
-        new String[] {"management.server.address=127.0.0.1", "management.server.port=0"}) {
+        new String[] {
+          "management.server.address=127.0.0.1", "management.server.port=0",
+          "management.server.port=8080", "management.server.port=9090"
+        }) {
       var environment = new StandardEnvironment();
       String[] parts = property.split("=", 2);
       environment
@@ -75,6 +78,52 @@ class LoopbackOnlyServerInvariantTest {
                       environment, new SpringApplication(CoreApplication.class)))
           .isInstanceOf(IllegalStateException.class);
     }
+  }
+
+  @Test
+  void rejectsEnvironmentStyleManagementListenersAndAllowsExplicitDisable() {
+    for (var override :
+        Map.of("MANAGEMENT_SERVER_ADDRESS", "127.0.0.1", "MANAGEMENT_SERVER_PORT", "0")
+            .entrySet()) {
+      var environment = new StandardEnvironment();
+      environment
+          .getPropertySources()
+          .addFirst(
+              new org.springframework.core.env.MapPropertySource(
+                  "test", Map.of("server.address", "127.0.0.1")));
+      environment
+          .getPropertySources()
+          .addFirst(
+              new SystemEnvironmentPropertySource(
+                  "test-systemEnvironment", Map.of(override.getKey(), override.getValue())));
+      assertThatThrownBy(
+              () ->
+                  processor.postProcessEnvironment(
+                      environment, new SpringApplication(CoreApplication.class)))
+          .isInstanceOf(IllegalStateException.class);
+    }
+    var disabled = new StandardEnvironment();
+    disabled
+        .getPropertySources()
+        .addFirst(
+            new org.springframework.core.env.MapPropertySource(
+                "test", Map.of("server.address", "127.0.0.1", "management.server.port", "-1")));
+    processor.postProcessEnvironment(disabled, new SpringApplication(CoreApplication.class));
+  }
+
+  @Test
+  void commandLineManagementListenerFailsBeforeAnyWebServerCanStart() {
+    var started = new AtomicBoolean();
+    var application = new SpringApplication(CoreApplication.class);
+    application.addListeners(
+        event -> {
+          if (event instanceof WebServerInitializedEvent) {
+            started.set(true);
+          }
+        });
+    assertThatThrownBy(() -> application.run("--management.server.port=0", "--server.port=0"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThat(started).isFalse();
   }
 
   @Test

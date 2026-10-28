@@ -17,6 +17,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 class NewsApiExceptionHandler {
@@ -127,6 +128,17 @@ class NewsApiExceptionHandler {
             "INFRASTRUCTURE_FAILURE",
             "Infrastructure unavailable",
             "The service cannot access durable storage."),
+        request);
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  ResponseEntity<ProblemDetail> handleUnmappedResource(HttpServletRequest request) {
+    return NewsApiProblemFactory.response(
+        new ProblemSpec(
+            HttpStatus.NOT_FOUND,
+            "RESOURCE_NOT_FOUND",
+            "Resource not found",
+            "No resource exists at the requested path."),
         request);
   }
 

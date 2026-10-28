@@ -1,27 +1,45 @@
-# Milestone 1 Architecture
+# M2B2B Architecture
 
-Milestone 1 adds one static, versioned contract boundary. PostgreSQL remains the sole running
-Compose service. The Java and Python applications remain independent scaffolds; both validate
-the same corpus but no cross-process workflow exists.
+The Java 21 modular monolith owns transactional news ingestion and immutable PostgreSQL revisions.
+The Python 3.12 worker remains an independent scaffold; there is no cross-process workflow or worker
+execution. PostgreSQL 18.6 is the sole Compose service. ADRs 0007–0009 record persistence, admission,
+and the loopback HTTP business API decisions.
 
 ```mermaid
 flowchart LR
-    Schemas[contracts/v1 JSON Schemas] --> Java[Java validator tests]
-    Schemas --> Python[Python validator tests]
-    Corpus[Shared valid and invalid fixtures] --> Java
-    Corpus --> Python
-    Core[Java core scaffold] -. no workflow .-> Db[(PostgreSQL 18.6)]
-    Worker[Python fake backend] -. no workflow .-> Db
+    Client[Local HTTP client] --> Server[127.0.0.1 application server]
+    Server --> API[News Event v1 business API]
+    API --> Coordinator[Transactional ingestion coordinator]
+    Coordinator --> DB[(PostgreSQL 18.6)]
+    API --> Reads[Durable event and job reads]
+    Reads --> DB
+    Server --> Health[Actuator health only]
+    Health --> Live[livenessState]
+    Health --> Ready[readinessState and db]
+    Ready --> DB
+    Contracts[contracts/v1 JSON Schemas] --> API
+    Contracts --> Python[Python contract tests and fake backend]
 ```
 
 ## Boundaries
 
-- `contracts/v1` is authoritative; runtime-specific classes do not redefine payload models.
-- The schemas use Draft 2020-12, reject undeclared fields, and encode portable semantic
-  invariants with conditional validation.
-- PostgreSQL is prepared as the future durable source of truth, but still contains only the
-  Milestone 0 Flyway baseline metadata.
-- The fake backend is a deterministic test seam, not an LLM, extraction system, or trading strategy.
-- No HTTP/domain API is exposed. Spring Boot runs as a non-web application when started manually.
-- Broker, market-data, signal, risk, portfolio, execution, queue, order, ingestion, persistence,
-  and model-runtime code are intentionally absent.
+- `contracts/v1` remains the authoritative cross-language boundary. Closed Draft 2020-12 schemas,
+  portable semantic invariants, and the shared corpus are unchanged.
+- Ingestion resolves immutable revision identity before freshness or capacity policy. Item locks
+  serialize revision ordering; the durable NEWS_INFERENCE mutex serializes pending admission.
+  Supersession, replacement insertion, and latest-pointer updates share one transaction.
+- News admission is immutable (`QUEUED` or `OUT_OF_ORDER`); job status is mutable (`PENDING` or
+  `SUPERSEDED`). Business reads reconstruct state from PostgreSQL, not controller memory.
+- Flyway V1 and V2 remain the entire schema history; `platform_metadata.milestone` remains `2A`.
+- All HTTP routes share one server bound exactly to `127.0.0.1`. External binding and separate
+  management-listener configuration fail startup; the existing `-1` management-port opt-out remains.
+- Actuator exposes only `/actuator/health` and its liveness/readiness groups. Liveness checks only
+  application liveness; readiness additionally checks PostgreSQL. All health details and components
+  are hidden. Discovery, other Actuator endpoints, and JMX exposure are disabled.
+- Acceptance tests use isolated PostgreSQL Testcontainers and real ephemeral-port loopback HTTP.
+  Database access denial is restored through resource cleanup. Only post-restoration readiness may
+  poll with a deadline. Restart coverage closes one complete context before starting another against
+  the same live database and schema, comparing explicitly ordered durable rows and stable metadata.
+- The fake backend is a deterministic test seam. Job claiming, leases, retries, inference, model
+  integration, Redis, broker submission, signals, risk, portfolio behavior, orders, and external AI
+  access remain absent.
