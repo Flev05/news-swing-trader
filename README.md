@@ -1,12 +1,12 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **M3A1**: durable inference-job schema support and ingestion/read
-compatibility extend the M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
+repository is currently at **M3A2**: Java-only claiming, lease renewal, failure, and bounded recovery extend
+M3A1 durable inference-job schema support and ingestion/read compatibility, built on the M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
 news revisions, transactional ingestion admission, a loopback-only local HTTP business API,
 Actuator health, and durable restart recovery acceptance tests.
 
-It has no job claiming, worker execution,
+It has no result acceptance, eligible-result queries, worker endpoints or execution,
 signal generation, broker integration, model download, external AI access, risk decisions, or
 order intents.
 
@@ -105,14 +105,14 @@ through test configuration outside the application scan. No application-state as
 V1 and V2 remain unchanged; V3 advances `platform_metadata.milestone` to `3A`, identifying
 the schema checkpoint rather than completed lifecycle operations.
 
-Later milestones add operations recovery, local inference, deterministic decisioning, DRY_RUN
+Later milestones add worker transport, local inference, deterministic decisioning, DRY_RUN
 intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from
 this checkpoint.
 
-## M3A1 schema and ingestion compatibility
+## M3A schema and ingestion compatibility
 
 The complete approved M3A lifecycle design is retained in [docs/m3a-design.md](docs/m3a-design.md)
-and [ADR 0010](docs/adr/0010-durable-inference-job-lifecycle.md). Only M3A1 is implemented.
+and [ADR 0010](docs/adr/0010-durable-inference-job-lifecycle.md). M3A1 schema/compatibility and M3A2 claim/renew/fail/recover are implemented.
 
 V3 supports PENDING, RUNNING, RETRY_WAIT, SUCCEEDED, FAILED, SUPERSEDED, and EXPIRED, with
 assignment/lease constraints, immutable result storage, provenance checks, and queue indexes.
@@ -125,9 +125,46 @@ one pending slot; other states credit none. Successful admission supersedes nont
 and revokes ownership atomically; terminal jobs and historical results remain unchanged.
 
 Existing HTTP representations show all statuses without exposing ownership or assignment metadata.
-There are no claim, renewal, failure, recovery, result acceptance, eligible-result-query, or worker
-HTTP implementations; no scheduler or Python changes. Tests construct lifecycle states explicitly
+There are no result acceptance, eligible-result-query, or worker HTTP implementations; no scheduler
+or Python changes. Tests construct lifecycle states explicitly
 with SQL. Schema checks alone do not validate the complete Inference Result v1 contract or pair a
 result atomically with SUCCEEDED; those are future Java responsibilities.
 
 Once committed, V3 must not be edited. Subsequent corrections require a new migration.
+
+## M3A2 Java lifecycle
+
+`InferenceJobLifecycleService` exposes only `claimNext()`, `renew(AssignmentRef)`,
+`fail(AssignmentRef, FailureKind)`, and `recoverBatch()`. These Java calls reject ambient transactions;
+they have no worker HTTP routes. No transaction remains open for inference.
+
+PostgreSQL `clock_timestamp()`, sampled on the transaction connection after locks, governs decisions.
+Ingestion retains its independent request Clock. Ownership requires the current revision, RUNNING state,
+matching assignment number/token, and lease/news deadlines strictly after decision time. Equality expires.
+Claims consume one stored assignment and generate fresh token/inference IDs; delivery follows commit.
+Renewal never shortens a lease or extends beyond the news deadline.
+
+- `trader.inference.jobs.lease-duration`: positive whole milliseconds; default `60s`.
+- `trader.inference.jobs.recovery-batch-size`: 1-1000; default 100; also bounds claim candidates.
+- Existing maximum assignments/backend remain immutable per-job snapshots; the default is three total assignments.
+- All mutations lock one item, then the NEWS_INFERENCE admission mutex, then the job.
+  Claim/recovery skip locked items; renewal/failure wait for their item.
+- Recovery first cleans obsolete/expired work and due leases, then requeues RETRY_WAIT work if capacity permits.
+  Requeue uses exact PENDING occupancy under the admission mutex, including expired rows awaiting cleanup.
+  Waiting consumes no lease or assignment. No terminal work is retried.
+
+One recovery call attempts at most the batch count of candidate transactions, with each committed
+independently. A due lease can become RETRY_WAIT and then PENDING in the same call if budget remains;
+these consume two slots. No candidate-list refill occurs. `claimNext()` first invokes one recovery pass,
+then inspects at most the batch count of PENDING candidates. `NoWork` means no assignment in that bounded
+call, not proof of queue emptiness.
+
+Local lock/statement timeouts are two/five seconds. Candidate budgets bound work; these timeouts
+do not establish an overall call deadline or a fixed end-to-end latency guarantee.
+A `RecoveryInfrastructureException` exposes committed progress and the failed job ID (absent for
+discovery failures); earlier commits survive, the failing transaction rolls back, and processing stops.
+Claim failures after a successful recovery pass also leave that recovery progress durable.
+There is no automatic retry framework, scheduler, startup sweep, or mutation triggered by reads.
+Restart recovery must be invoked explicitly through Java.
+
+See [the M3A2 verification report](docs/m3a2-verification.md) for acceptance coverage and gates.

@@ -69,6 +69,8 @@ trader:
     jobs:
       max-assignments: 3
       expected-backend: fake
+      lease-duration: 60s
+      recovery-batch-size: 100
   news:
     ingestion:
       pending-capacity: 1000

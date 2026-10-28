@@ -23,6 +23,8 @@ class HealthHttpAcceptanceTest {
       try (var app = HttpAcceptanceSupport.start(postgres, null)) {
         // The restart fixture's @TestConfiguration cannot leak into a normal context.
         assertThat(app.context.getBeansOfType(Clock.class)).containsOnlyKeys("newsIngestionClock");
+        assertThat(app.context.getBean("lifecycleTimeSource").getClass().getSimpleName())
+            .isEqualTo("PostgresLifecycleTimeSource");
         var groups = app.context.getBean(HealthEndpointGroups.class);
         assertThat(groups.getNames()).containsExactlyInAnyOrder("liveness", "readiness");
         for (String contributor :
@@ -91,6 +93,8 @@ class HealthHttpAcceptanceTest {
   void exposesOnlyHealthAndReturnsNotFoundForUnmappedPaths() throws Exception {
     try (var app = HttpAcceptanceSupport.startWithoutDatabase()) {
       assertThat(app.context.getBeansOfType(Clock.class)).containsOnlyKeys("newsIngestionClock");
+      assertThat(app.context.getBean("lifecycleTimeSource").getClass().getSimpleName())
+          .isEqualTo("PostgresLifecycleTimeSource");
       for (String endpoint :
           List.of(
               "metrics",

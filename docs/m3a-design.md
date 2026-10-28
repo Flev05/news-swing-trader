@@ -1,6 +1,6 @@
 # M3A design reference
 
-Status: approved design for the complete M3A lifecycle. **Only M3A1 is implemented.**
+Status: approved design for the complete M3A lifecycle. **M3A1 and the M3A2 claim/renew/fail/recover boundary are implemented.**
 This document retains decisions for subsequent checkpoints; it does not authorize their implementation.
 The reviewed baseline was f0985b23cd64778037c8ca5c281f76d905c8942b.
 
@@ -12,7 +12,7 @@ Metadata `3A` identifies the schema checkpoint, not completed lifecycle function
 There are no claim, renewal, failure, recovery, completion, or eligible-result-query services,
 placeholder implementations, worker HTTP endpoints, scheduler, or Python changes in M3A1.
 
-Later M3A checkpoints implement the Java/PostgreSQL lifecycle below. M3B may expose it to one
+M3A2 implements claim/renew/fail/recover below; result acceptance and eligibility remain later checkpoints. M3B may expose it to one
 local Python worker over loopback HTTP. Java owns every database mutation. No transaction or lock
 may remain open during inference. No external AI, model downloads, Redis, broker, signals, risk,
 portfolio, or order behavior belongs to M3A. Keep both authoritative v1 contracts unchanged.
@@ -210,3 +210,23 @@ time sources. Microsecond-aligned boundaries; no sleeps.
 Run make doctor, make format, make lint, make test, make migration-smoke, git diff --check,
 and git status --short from WSL Ubuntu. Preserve dependency pins and leave changes uncommitted
 unless separately asked. M3A1 stops before implementing any later lifecycle operation.
+
+## M3A2 implementation boundary
+
+M3A2 exposes only the four approved Java operations; no completion or result placeholder is added.
+V1-V3, contracts, dependency pins, Python, and HTTP representations remain unchanged.
+
+The configured recovery batch count is shared by cleanup and retry phases. Cleanup discovers bounded
+IDs without job locks, prioritizing obsolete/news-expired work by creation time/job ID, then due leases
+by lease expiry/job ID. Remaining budget discovers RETRY_WAIT IDs by creation time/job ID. Lists are
+not refilled. Each candidate commits separately; SKIP LOCKED item contention and changed states count
+as skips. Fresh under-lock time/freshness checks override advisory discovery cutoffs.
+A lease-expired job may requeue in a second transaction during the same call if budget remains.
+The summary counts completed candidate transactions, so a job may count twice. A failure stops the
+pass and exposes only earlier committed progress plus an optional failed job ID. Claim invokes one
+such pass, then inspects a separate bounded PENDING list in creation-time/job-ID order.
+
+Candidate budgets bound work. Two-second lock and five-second statement timeouts do not establish
+an overall call deadline or fixed end-to-end latency. Claim/recovery skip locked items; tests of time
+sampled after a wait instead hold the admission mutex or use renewal/failure's blocking item lock.
+No scheduler, startup sweep, read-triggered mutation, or general retry framework is introduced.

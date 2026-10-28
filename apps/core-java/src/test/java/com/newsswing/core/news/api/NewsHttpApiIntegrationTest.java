@@ -1,7 +1,10 @@
 package com.newsswing.core.news.api;
 
+import static com.newsswing.core.inference.jobs.InferenceJobLifecycleService.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.newsswing.core.inference.jobs.InferenceJobLifecycleService;
+import com.newsswing.core.inference.jobs.LifecycleHttpTestConfiguration;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -49,7 +52,7 @@ import tools.jackson.databind.node.ObjectNode;
       "trader.news.api.max-request-bytes=1024"
     })
 @Testcontainers
-@Import(NewsHttpApiIntegrationTest.ClockConfiguration.class)
+@Import({NewsHttpApiIntegrationTest.ClockConfiguration.class, LifecycleHttpTestConfiguration.class})
 @Timeout(30)
 class NewsHttpApiIntegrationTest {
 
@@ -67,6 +70,7 @@ class NewsHttpApiIntegrationTest {
   @LocalServerPort private int port;
   @Autowired private JsonMapper jsonMapper;
   @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired private InferenceJobLifecycleService lifecycle;
 
   private final HttpClient client =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
@@ -83,6 +87,77 @@ class NewsHttpApiIntegrationTest {
         Timestamp.from(NOW),
         Timestamp.from(NOW),
         "PENDING");
+  }
+
+  @Test
+  void realLifecycleTransitionsKeepExistingHttpFieldsPrivate() throws Exception {
+    // Historical status fixtures in other methods can leave live RUNNING/RETRY_WAIT rows.
+    // Isolate this claim/recovery scenario from their ordering.
+    jdbcTemplate.execute(
+        "TRUNCATE trader.inference_results, trader.inference_jobs, trader.news_revisions, trader.news_items");
+    UUID eventId = UUID.randomUUID();
+    String body = event(eventId, "lifecycle-" + UUID.randomUUID(), "revision-1", 0);
+    var admission = json(post(body));
+    UUID jobId = UUID.fromString(admission.path("job").path("job_id").stringValue());
+    var assignment = ((Claimed) lifecycle.claimNext()).assignment();
+    assertThat(assignment.ref().jobId()).isEqualTo(jobId);
+    assertLifecycleHttp(body, eventId, jobId, "RUNNING");
+    assertThat(lifecycle.renew(assignment.ref())).isInstanceOf(Renewed.class);
+    assertThat(lifecycle.fail(assignment.ref(), FailureKind.RECOVERABLE))
+        .isInstanceOf(RetryWaiting.class);
+    assertLifecycleHttp(body, eventId, jobId, "RETRY_WAIT");
+    assertThat(lifecycle.recoverBatch().requeued()).isEqualTo(1);
+    assertLifecycleHttp(body, eventId, jobId, "PENDING");
+    var second = ((Claimed) lifecycle.claimNext()).assignment();
+    assertThat(lifecycle.fail(second.ref(), FailureKind.PERMANENT)).isInstanceOf(Failed.class);
+    assertLifecycleHttp(body, eventId, jobId, "FAILED");
+  }
+
+  private void assertLifecycleHttp(String requestBody, UUID eventId, UUID jobId, String status)
+      throws Exception {
+    var response = get("/api/v1/inference-jobs/" + jobId);
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertSuccessJson(response);
+    var job = json(response);
+    assertFields(
+        job,
+        "job_id",
+        "news_event_id",
+        "job_kind",
+        "input_schema_version",
+        "current_status",
+        "created_at",
+        "superseded_at",
+        "superseded_by_event_id");
+    assertThat(job.path("current_status").stringValue()).isEqualTo(status);
+    assertThat(job.path("superseded_at").isNull()).isTrue();
+    assertThat(job.path("superseded_by_event_id").isNull()).isTrue();
+    var revisionResponse = get("/api/v1/news-events/" + eventId);
+    assertSuccessJson(revisionResponse);
+    var revision = json(revisionResponse);
+    assertFields(revision, "event", "news_item_id", "admission_state", "persisted_at", "job");
+    assertFields(
+        revision.path("job"),
+        "job_id",
+        "current_status",
+        "created_at",
+        "superseded_at",
+        "superseded_by_event_id");
+    assertThat(revision.path("job").path("current_status").stringValue()).isEqualTo(status);
+    var duplicateResponse = post(requestBody);
+    assertThat(duplicateResponse.statusCode()).isEqualTo(200);
+    assertSuccessJson(duplicateResponse);
+    var duplicate = json(duplicateResponse);
+    assertFields(
+        duplicate,
+        "outcome",
+        "requested_event_id",
+        "stored_event_id",
+        "news_item_id",
+        "admission_state",
+        "job");
+    assertFields(duplicate.path("job"), "job_id", "current_status");
+    assertThat(duplicate.path("job").path("current_status").stringValue()).isEqualTo(status);
   }
 
   @Test
