@@ -5,6 +5,7 @@ import static com.newsswing.core.inference.jobs.InferenceJobLifecycleService.*;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -130,7 +131,7 @@ class InferenceJobLifecycleRepository {
         SELECT j.job_id, j.news_revision_id, j.status, j.assignment_count, j.max_assignments,
                j.expected_backend, j.ownership_token, j.assignment_inference_id,
                j.lease_expires_at, j.last_failure_code, r.deadline_at,
-               r.event_payload::text AS event_payload
+               r.event_payload::text AS event_payload, r.content_hash, j.input_schema_version
         FROM trader.inference_jobs j
         JOIN trader.news_revisions r ON r.event_id = j.news_revision_id
         WHERE j.job_id = ? FOR UPDATE OF j
@@ -150,10 +151,114 @@ class InferenceJobLifecycleRepository {
                         : rs.getTimestamp("lease_expires_at").toInstant(),
                     rs.getString("last_failure_code"),
                     rs.getTimestamp("deadline_at").toInstant(),
-                    rs.getString("event_payload")),
+                    rs.getString("event_payload"),
+                    rs.getString("content_hash"),
+                    rs.getString("input_schema_version")),
             jobId);
     return rows.isEmpty() ? null : rows.getFirst();
   }
+
+  AcceptedRow findAccepted(UUID jobId) {
+    var rows =
+        jdbc.query(
+            """
+        SELECT job_id, news_revision_id, inference_id, accepted_at,
+               assignment_number, accepted_owner_token
+        FROM trader.inference_results WHERE job_id = ?
+        """,
+            (rs, n) ->
+                new AcceptedRow(
+                    new CompletionReceipt(
+                        rs.getObject("job_id", UUID.class),
+                            rs.getObject("news_revision_id", UUID.class),
+                        rs.getObject("inference_id", UUID.class),
+                            rs.getTimestamp("accepted_at").toInstant()),
+                    rs.getInt("assignment_number"),
+                    rs.getObject("accepted_owner_token", UUID.class)),
+            jobId);
+    return rows.isEmpty() ? null : rows.getFirst();
+  }
+
+  boolean payloadEquals(UUID jobId, String json) {
+    return Boolean.TRUE.equals(
+        jdbc.queryForObject(
+            "SELECT result_payload = CAST(? AS jsonb) FROM trader.inference_results WHERE job_id = ?",
+            Boolean.class,
+            json,
+            jobId));
+  }
+
+  void insertResult(JobRow job, String json, Instant now) {
+    requireOne(
+        jdbc.update(
+            """
+        INSERT INTO trader.inference_results (
+            job_id, news_revision_id, inference_id, news_event_sha256, result_schema_version,
+            backend, result_payload, assignment_number, accepted_owner_token, accepted_at)
+        VALUES (?, ?, ?, ?, '1.0.0', ?, CAST(? AS jsonb), ?, ?, ?)
+        """,
+            job.jobId(),
+            job.revisionId(),
+            job.inferenceId(),
+            job.contentHash(),
+            job.expectedBackend(),
+            json,
+            job.assignmentCount(),
+            job.token(),
+            Timestamp.from(now)));
+  }
+
+  void succeed(JobRow job, Instant now) {
+    requireOne(
+        jdbc.update(
+            """
+        UPDATE trader.inference_jobs
+        SET status = 'SUCCEEDED', terminal_at = ?, ownership_token = NULL,
+            assignment_inference_id = NULL, assigned_at = NULL, lease_expires_at = NULL,
+            last_failure_code = NULL
+        WHERE job_id = ? AND status = 'RUNNING' AND assignment_count = ?
+          AND ownership_token = ? AND assignment_inference_id = ?
+        """,
+            Timestamp.from(now),
+            job.jobId(),
+            job.assignmentCount(),
+            job.token(),
+            job.inferenceId()));
+  }
+
+  void establishReadSnapshot() {
+    jdbc.queryForObject("SELECT pg_current_snapshot()::text", String.class);
+  }
+
+  Optional<CurrentEligibleResult> findCurrentEligibleResult(UUID itemId, Instant decisionAt) {
+    return jdbc
+        .query(
+            """
+        SELECT a.job_id, a.news_revision_id, a.inference_id, a.accepted_at,
+               a.result_payload::text AS result_payload
+        FROM trader.news_items i
+        JOIN trader.news_revisions r ON r.event_id = i.latest_event_id AND r.news_item_id = i.id
+        JOIN trader.inference_jobs j ON j.news_revision_id = r.event_id
+        JOIN trader.inference_results a ON a.job_id = j.job_id AND a.news_revision_id = r.event_id
+        WHERE i.id = ? AND j.status = 'SUCCEEDED' AND r.deadline_at > ?
+        """,
+            (rs, n) ->
+                new CurrentEligibleResult(
+                    itemId,
+                    new CompletionReceipt(
+                        rs.getObject("job_id", UUID.class),
+                            rs.getObject("news_revision_id", UUID.class),
+                        rs.getObject("inference_id", UUID.class),
+                            rs.getTimestamp("accepted_at").toInstant()),
+                    rs.getString("result_payload"),
+                    decisionAt),
+            itemId,
+            Timestamp.from(decisionAt))
+        .stream()
+        .findFirst();
+  }
+
+  record AcceptedRow(CompletionReceipt receipt, int assignmentNumber, UUID token) {}
 
   long countPending() {
     return jdbc.queryForObject(
@@ -260,5 +365,7 @@ class InferenceJobLifecycleRepository {
       Instant leaseExpiresAt,
       String lastFailureCode,
       Instant deadlineAt,
-      String eventPayload) {}
+      String eventPayload,
+      String contentHash,
+      String inputSchemaVersion) {}
 }

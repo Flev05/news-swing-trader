@@ -1,6 +1,6 @@
 # M3A design reference
 
-Status: approved design for the complete M3A lifecycle. **M3A1 and the M3A2 claim/renew/fail/recover boundary are implemented.**
+Status: approved design for the complete M3A lifecycle. **M3A1, M3A2 claim/renew/fail/recover, and M3A3 completion/replay/eligibility are implemented.**
 This document retains decisions for subsequent checkpoints; it does not authorize their implementation.
 The reviewed baseline was f0985b23cd64778037c8ca5c281f76d905c8942b.
 
@@ -12,7 +12,7 @@ Metadata `3A` identifies the schema checkpoint, not completed lifecycle function
 There are no claim, renewal, failure, recovery, completion, or eligible-result-query services,
 placeholder implementations, worker HTTP endpoints, scheduler, or Python changes in M3A1.
 
-M3A2 implements claim/renew/fail/recover below; result acceptance and eligibility remain later checkpoints. M3B may expose it to one
+M3A2 implements claim/renew/fail/recover below; M3A3 implements result acceptance, historical replay, and current-result eligibility. M3B may expose it to one
 local Python worker over loopback HTTP. Java owns every database mutation. No transaction or lock
 may remain open during inference. No external AI, model downloads, Redis, broker, signals, risk,
 portfolio, or order behavior belongs to M3A. Keep both authoritative v1 contracts unchanged.
@@ -230,3 +230,17 @@ Candidate budgets bound work. Two-second lock and five-second statement timeouts
 an overall call deadline or fixed end-to-end latency. Claim/recovery skip locked items; tests of time
 sampled after a wait instead hold the admission mutex or use renewal/failure's blocking item lock.
 No scheduler, startup sweep, read-triggered mutation, or general retry framework is introduced.
+
+## M3A3 implementation boundary
+
+M3A3 implements the approved Java completion/replay/current-result query with no migration or
+contract change. Preparation rejects one-document/duplicate-key errors, decoded NUL, and unpaired
+Unicode surrogates. Valid supplementary characters and literal backslash sequences are preserved.
+Prepared parsing, schema, or representability failure under matching historical accepting
+credentials returns CompletionConflict without a JSONB cast. Current-owner validation failures
+remain subordinate to ownership, revision, news, and lease rejection precedence.
+
+The nonlocking eligible-result query owns a read-only REPEATABLE READ transaction, explicitly
+establishes its snapshot before sampling lifecycle time, and joins only the current latest
+revision's succeeded result. Mutation transactions retain READ COMMITTED and the approved lock order.
+See m3a3-verification.md for implementation acceptance and repository gates.

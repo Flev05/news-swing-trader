@@ -122,7 +122,7 @@ class InferenceJobRestartRecoveryAcceptanceTest {
     }
   }
 
-  private static ConfigurableApplicationContext start(
+  static ConfigurableApplicationContext start(
       PostgreSQLContainer<?> postgres, Instant now, int max, String backend) {
     return new SpringApplication(CoreApplication.class, RestartConfiguration.class)
         .run(
@@ -144,13 +144,13 @@ class InferenceJobRestartRecoveryAcceptanceTest {
             "--test.lifecycle-now=" + now);
   }
 
-  private static List<String> history(JdbcTemplate jdbc) {
+  static List<String> history(JdbcTemplate jdbc) {
     return jdbc.queryForList(
         "SELECT version || ':' || checksum FROM trader.flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank",
         String.class);
   }
 
-  private static UnhashedNewsEvent event(String item) {
+  static UnhashedNewsEvent event(String item) {
     return new UnhashedNewsEvent(
         "1.0.0",
         UUID.randomUUID(),

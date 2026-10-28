@@ -74,8 +74,37 @@ public final class InferenceJobFixtures {
         WHERE j.job_id = ?
         """,
             jobId);
+    String payload =
+        resultPayload(
+            (String) row.get("event_payload"),
+            inferenceId,
+            (String) row.get("expected_backend"),
+            now);
+    jdbc.update(
+        """
+        INSERT INTO trader.inference_results (
+            job_id, news_revision_id, inference_id, news_event_sha256, result_schema_version,
+            backend, result_payload, assignment_number, accepted_owner_token, accepted_at)
+        VALUES (?, ?, ?, ?, '1.0.0', ?, CAST(? AS jsonb), ?, ?, ?)
+        """,
+        jobId,
+        row.get("news_revision_id"),
+        inferenceId,
+        row.get("content_hash"),
+        row.get("expected_backend"),
+        payload,
+        row.get("assignment_count"),
+        acceptedToken,
+        Timestamp.from(now));
+    return payload;
+  }
+
+  /** Pure schema-valid output builder; it neither accepts nor persists a result. */
+  public static String resultPayload(
+      String eventJson, UUID inferenceId, String backend, Instant now) {
+    var event = JSON.readTree(eventJson);
     List<Map<String, Object>> tickers = new ArrayList<>();
-    JSON.readTree((String) row.get("event_payload"))
+    event
         .path("affected_symbols")
         .forEach(
             symbol -> {
@@ -98,48 +127,30 @@ public final class InferenceJobFixtures {
               ticker.put("reason_codes", List.of("insufficient_source_detail"));
               tickers.add(ticker);
             });
-    String payload =
-        JSON.writeValueAsString(
+    return JSON.writeValueAsString(
+        Map.of(
+            "schema_version",
+            "1.0.0",
+            "inference_id",
+            inferenceId.toString(),
+            "news_event_id",
+            event.path("event_id").asString(),
+            "news_event_sha256",
+            event.path("content_hash").asString(),
+            "generated_at",
+            now.toString(),
+            "model",
             Map.of(
-                "schema_version",
-                "1.0.0",
-                "inference_id",
-                inferenceId.toString(),
-                "news_event_id",
-                row.get("news_revision_id").toString(),
-                "news_event_sha256",
-                row.get("content_hash"),
-                "generated_at",
-                now.toString(),
-                "model",
-                Map.of(
-                    "backend",
-                    row.get("expected_backend"),
-                    "name",
-                    "explicit-test-fixture",
-                    "version",
-                    "1",
-                    "prompt_template_version",
-                    "1.0.0"),
-                "ticker_results",
-                tickers));
-    jdbc.update(
-        """
-        INSERT INTO trader.inference_results (
-            job_id, news_revision_id, inference_id, news_event_sha256, result_schema_version,
-            backend, result_payload, assignment_number, accepted_owner_token, accepted_at)
-        VALUES (?, ?, ?, ?, '1.0.0', ?, CAST(? AS jsonb), ?, ?, ?)
-        """,
-        jobId,
-        row.get("news_revision_id"),
-        inferenceId,
-        row.get("content_hash"),
-        row.get("expected_backend"),
-        payload,
-        row.get("assignment_count"),
-        acceptedToken,
-        Timestamp.from(now));
-    return payload;
+                "backend",
+                backend,
+                "name",
+                "explicit-test-fixture",
+                "version",
+                "1",
+                "prompt_template_version",
+                "1.0.0"),
+            "ticker_results",
+            tickers));
   }
 
   public static String snapshot(JdbcTemplate jdbc, UUID jobId) {

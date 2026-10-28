@@ -1,12 +1,14 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **M3A2**: Java-only claiming, lease renewal, failure, and bounded recovery extend
-M3A1 durable inference-job schema support and ingestion/read compatibility, built on the M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
+repository is currently at **M3A3**: Java-only validated atomic completion, historical replay, and
+current eligible-result reads extend M3A2 claiming, lease renewal, failure, and bounded recovery.
+These build on M3A1 durable inference-job schema support and ingestion/read compatibility, and the
+M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
 news revisions, transactional ingestion admission, a loopback-only local HTTP business API,
 Actuator health, and durable restart recovery acceptance tests.
 
-It has no result acceptance, eligible-result queries, worker endpoints or execution,
+It has no result HTTP endpoint, worker endpoints or execution,
 signal generation, broker integration, model download, external AI access, risk decisions, or
 order intents.
 
@@ -112,7 +114,7 @@ this checkpoint.
 ## M3A schema and ingestion compatibility
 
 The complete approved M3A lifecycle design is retained in [docs/m3a-design.md](docs/m3a-design.md)
-and [ADR 0010](docs/adr/0010-durable-inference-job-lifecycle.md). M3A1 schema/compatibility and M3A2 claim/renew/fail/recover are implemented.
+and [ADR 0010](docs/adr/0010-durable-inference-job-lifecycle.md). M3A1 schema/compatibility, M3A2 claim/renew/fail/recover, and M3A3 completion/replay/eligibility are implemented.
 
 V3 supports PENDING, RUNNING, RETRY_WAIT, SUCCEEDED, FAILED, SUPERSEDED, and EXPIRED, with
 assignment/lease constraints, immutable result storage, provenance checks, and queue indexes.
@@ -125,16 +127,16 @@ one pending slot; other states credit none. Successful admission supersedes nont
 and revokes ownership atomically; terminal jobs and historical results remain unchanged.
 
 Existing HTTP representations show all statuses without exposing ownership or assignment metadata.
-There are no result acceptance, eligible-result-query, or worker HTTP implementations; no scheduler
-or Python changes. Tests construct lifecycle states explicitly
-with SQL. Schema checks alone do not validate the complete Inference Result v1 contract or pair a
-result atomically with SUCCEEDED; those are future Java responsibilities.
+M3A3 supplies Java result acceptance and eligible-result reads; there are no result or worker HTTP
+endpoints, scheduler, or Python changes. Schema-only tests construct lifecycle states explicitly
+with SQL. Java validates the complete Inference Result v1 contract and atomically pairs an
+accepted result with SUCCEEDED.
 
 Once committed, V3 must not be edited. Subsequent corrections require a new migration.
 
 ## M3A2 Java lifecycle
 
-`InferenceJobLifecycleService` exposes only `claimNext()`, `renew(AssignmentRef)`,
+M3A2 introduced `claimNext()`, `renew(AssignmentRef)`,
 `fail(AssignmentRef, FailureKind)`, and `recoverBatch()`. These Java calls reject ambient transactions;
 they have no worker HTTP routes. No transaction remains open for inference.
 
@@ -168,3 +170,29 @@ There is no automatic retry framework, scheduler, startup sweep, or mutation tri
 Restart recovery must be invoked explicitly through Java.
 
 See [the M3A2 verification report](docs/m3a2-verification.md) for acceptance coverage and gates.
+
+## M3A3 completion and eligible results
+
+The Java-only lifecycle boundary adds `complete(AssignmentRef, resultJson)` and
+`findCurrentEligibleResult(newsItemId)`. No result or worker HTTP route is added.
+
+Completion prepares one immutable JSON string before opening a transaction. Strict parsing rejects
+duplicate keys and trailing documents. Decoded string values and property names reject NUL and
+unpaired surrogates, preserving valid supplementary characters and literal backslash sequences.
+The cached authoritative schema enforces formats, closed objects, and unique tickers.
+
+After item -> admission mutex -> job locking, replay precedes current ownership/freshness.
+Matching accepting credentials and equal PostgreSQL JSONB return the original receipt; changed
+or invalid payloads conflict without mutation. Prepared invalid replay never reaches a JSONB cast.
+Current ownership and news/lease deadlines precede validation rejection. A valid live owner's
+invalid contract or provenance terminally fails the job without a result. Valid acceptance inserts
+the immutable result and transitions RUNNING to SUCCEEDED atomically, recording database time and
+clearing ownership. Outcomes are delivered after commit; infrastructure failures roll back.
+
+Eligible-result reads own a nonlocking read-only REPEATABLE READ transaction, explicitly establish
+a snapshot, and sample lifecycle database time once. Only the latest revision's SUCCEEDED result
+with a strictly future news deadline is returned; historical results are never a fallback.
+The return type exposes no ownership token. Ingestion's Clock is unchanged.
+
+See [the M3A3 verification report](docs/m3a3-verification.md) for test counts, races, rollback,
+restart evidence, protected paths, and a concrete lost-acknowledgement example.

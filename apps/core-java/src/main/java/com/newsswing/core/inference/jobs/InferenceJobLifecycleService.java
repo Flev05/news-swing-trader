@@ -1,6 +1,9 @@
 package com.newsswing.core.inference.jobs;
 
+import com.newsswing.core.contracts.SharedContractValidator.Violation;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Java-only lifecycle boundary. Calls own their transactions and reject ambient transactions. */
@@ -11,6 +14,15 @@ public interface InferenceJobLifecycleService {
   RenewOutcome renew(AssignmentRef assignment);
 
   FailOutcome fail(AssignmentRef assignment, FailureKind kind);
+
+  CompletionOutcome complete(AssignmentRef assignment, String resultJson);
+
+  Optional<CurrentEligibleResult> findCurrentEligibleResult(UUID newsItemId);
+
+  record CompletionReceipt(UUID jobId, UUID newsEventId, UUID inferenceId, Instant acceptedAt) {}
+
+  record CurrentEligibleResult(
+      UUID newsItemId, CompletionReceipt receipt, String resultJson, Instant decisionAt) {}
 
   /** Earlier candidate commits survive a later failure; see RecoveryInfrastructureException. */
   RecoverySummary recoverBatch();
@@ -33,7 +45,9 @@ public interface InferenceJobLifecycleService {
   enum FailureCode {
     WORKER_RECOVERABLE,
     WORKER_PERMANENT,
-    LEASE_EXPIRED
+    LEASE_EXPIRED,
+    INVALID_RESULT,
+    PROVENANCE_MISMATCH
   }
 
   enum RejectionReason {
@@ -63,7 +77,25 @@ public interface InferenceJobLifecycleService {
 
   record Failed(FailureCode code) implements FailOutcome {}
 
-  record Rejected(RejectionReason reason) implements RenewOutcome, FailOutcome {}
+  sealed interface CompletionOutcome
+      permits Accepted, AlreadyAccepted, CompletionConflict, InvalidResult, Rejected {}
+
+  record Accepted(CompletionReceipt receipt) implements CompletionOutcome {}
+
+  record AlreadyAccepted(CompletionReceipt receipt) implements CompletionOutcome {}
+
+  record CompletionConflict() implements CompletionOutcome {}
+
+  record InvalidResult(FailureCode code, List<Violation> violations) implements CompletionOutcome {
+    public InvalidResult {
+      if (code != FailureCode.INVALID_RESULT && code != FailureCode.PROVENANCE_MISMATCH) {
+        throw new IllegalArgumentException("Expected a result validation failure code");
+      }
+      violations = List.copyOf(violations);
+    }
+  }
+
+  record Rejected(RejectionReason reason) implements RenewOutcome, FailOutcome, CompletionOutcome {}
 
   /** Counts committed candidate transactions, including skips and capacity deferrals. */
   record RecoverySummary(

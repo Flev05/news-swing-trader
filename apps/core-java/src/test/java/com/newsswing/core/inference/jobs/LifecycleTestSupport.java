@@ -55,6 +55,7 @@ abstract class LifecycleTestSupport {
   @Autowired PlatformTransactionManager manager;
   @Autowired ControlledTime time;
   @Autowired ProbeRepository repository;
+  @Autowired InferenceResultContractValidator resultValidator;
 
   @BeforeEach
   void reset() {
@@ -69,7 +70,8 @@ abstract class LifecycleTestSupport {
         repository,
         new InferenceJobLifecycleProperties(Duration.ofSeconds(60), batch),
         new NewsIngestionProperties(capacity),
-        manager);
+        manager,
+        resultValidator);
   }
 
   NewsIngestionResult.Queued queue(String item, int revision) {
@@ -201,6 +203,38 @@ abstract class LifecycleTestSupport {
       var rows = super.discoverRetries(limit);
       probe.accept("retriesDiscovered", null);
       return rows;
+    }
+
+    @Override
+    void establishReadSnapshot() {
+      super.establishReadSnapshot();
+      probe.accept("snapshotEstablished", null);
+    }
+
+    @Override
+    boolean payloadEquals(UUID id, String json) {
+      probe.accept("payloadComparison", id);
+      return super.payloadEquals(id, json);
+    }
+
+    @Override
+    void insertResult(JobRow job, String json, Instant now) {
+      probe.accept("beforeInsert", job.jobId());
+      super.insertResult(job, json, now);
+      probe.accept("resultInserted", job.jobId());
+    }
+
+    @Override
+    void succeed(JobRow job, Instant now) {
+      probe.accept("beforeSucceed", job.jobId());
+      super.succeed(job, now);
+      probe.accept("succeeded", job.jobId());
+    }
+
+    @Override
+    void fail(JobRow job, FailureCode code, Instant now) {
+      super.fail(job, code, now);
+      probe.accept("failed", job.jobId());
     }
 
     @Override

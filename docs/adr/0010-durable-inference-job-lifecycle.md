@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for M3A; schema and ingestion compatibility implemented in M3A1; Java claim/renew/fail/recover implemented in M3A2.
+Accepted for M3A; schema and ingestion compatibility implemented in M3A1; Java claim/renew/fail/recover implemented in M3A2; validated completion, replay, and eligible-result reads implemented in M3A3.
 The complete approved design remains in [the M3A design reference](../m3a-design.md).
 
 ## Decision
@@ -21,7 +21,7 @@ nonterminal predecessor and clears ownership; terminal predecessors remain uncha
 Capacity rejection and write failure preserve predecessor state and latest pointer.
 
 Store accepted results immutably with relational provenance checks and supporting indexes.
-Full result validation, acceptance, and current-result eligibility remain subsequent checkpoints.
+M3A3 implements full result validation, atomic acceptance, historical completion replay, and current-result eligibility in Java.
 M3A2 implements Java ownership operations and bounded recovery using the approved design. Database checks do not implement those operations.
 Public reads and duplicate responses retain their shapes and expose no assignment metadata.
 
@@ -31,6 +31,6 @@ V2 data and immutable revisions survive upgrade. V3 is frozen once committed; su
 corrections require a new migration. M3A1 tests construct valid lifecycle states explicitly with SQL.
 M3A2 adds only Java claim/renew/fail/recover, database-authoritative time, ownership fencing, and
 capacity-safe recovery with separate candidate commits and explicit partial progress. Candidate budgets
-bound work; per-lock/per-statement timeouts do not establish an overall call deadline. There are no
-completion services or placeholders, eligible-result queries, worker endpoints, Python changes,
-scheduler, dependency additions, or model integration.
+bound work; per-lock/per-statement timeouts do not establish an overall call deadline.
+M3A3 adds the approved completion/query operations without a new migration. There are no result or
+worker HTTP endpoints, Python changes, scheduler, dependency additions, or model integration.

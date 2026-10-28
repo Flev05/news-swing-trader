@@ -113,6 +113,29 @@ class NewsHttpApiIntegrationTest {
     assertLifecycleHttp(body, eventId, jobId, "FAILED");
   }
 
+  @Test
+  void realCompletionPreservesExistingHttpRepresentations() throws Exception {
+    jdbcTemplate.execute(
+        "TRUNCATE trader.inference_results, trader.inference_jobs, trader.news_revisions, trader.news_items");
+    UUID firstId = UUID.randomUUID();
+    String first = event(firstId, "completed-" + UUID.randomUUID(), "revision-1", 0);
+    UUID firstJob = UUID.fromString(json(post(first)).path("job").path("job_id").asString());
+    var a = ((Claimed) lifecycle.claimNext()).assignment();
+    String output =
+        com.newsswing.support.InferenceJobFixtures.resultPayload(
+            a.newsEventJson(), a.inferenceId(), a.expectedBackend(), NOW);
+    assertThat(lifecycle.complete(a.ref(), output)).isInstanceOf(Accepted.class);
+    assertLifecycleHttp(first, firstId, firstJob, "SUCCEEDED");
+    assertThat(get("/api/v1/inference-results/" + firstJob).statusCode()).isEqualTo(404);
+
+    UUID secondId = UUID.randomUUID();
+    String second = event(secondId, "invalid-output-" + UUID.randomUUID(), "revision-1", 0);
+    UUID secondJob = UUID.fromString(json(post(second)).path("job").path("job_id").asString());
+    var b = ((Claimed) lifecycle.claimNext()).assignment();
+    assertThat(lifecycle.complete(b.ref(), "{")).isInstanceOf(InvalidResult.class);
+    assertLifecycleHttp(second, secondId, secondJob, "FAILED");
+  }
+
   private void assertLifecycleHttp(String requestBody, UUID eventId, UUID jobId, String status)
       throws Exception {
     var response = get("/api/v1/inference-jobs/" + jobId);

@@ -3,23 +3,32 @@ package com.newsswing.core.inference.jobs;
 import static com.newsswing.core.inference.jobs.InferenceJobLifecycleRepository.*;
 import static com.newsswing.core.inference.jobs.InferenceJobLifecycleService.*;
 
+import com.newsswing.core.contracts.SharedContractValidator.Violation;
 import com.newsswing.core.news.ingestion.NewsIngestionProperties;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 final class JdbcInferenceJobLifecycleService implements InferenceJobLifecycleService {
   private final InferenceJobLifecycleRepository repository;
   private final InferenceJobLifecycleProperties properties;
   private final int capacity;
+  private final InferenceResultContractValidator resultValidator;
+  private final TransactionTemplate resultReads;
+  private static final JsonMapper JSON = JsonMapper.builder().build();
   private final TransactionTemplate transactions;
   private final TransactionTemplate discoveryTransactions;
 
@@ -27,8 +36,13 @@ final class JdbcInferenceJobLifecycleService implements InferenceJobLifecycleSer
       InferenceJobLifecycleRepository repository,
       InferenceJobLifecycleProperties properties,
       NewsIngestionProperties ingestion,
-      PlatformTransactionManager manager) {
+      PlatformTransactionManager manager,
+      InferenceResultContractValidator resultValidator) {
     this.repository = repository;
+    this.resultValidator = resultValidator;
+    this.resultReads = new TransactionTemplate(manager);
+    this.resultReads.setReadOnly(true);
+    this.resultReads.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     this.properties = properties;
     this.capacity = ingestion.pendingCapacity();
     this.transactions = new TransactionTemplate(manager);
@@ -133,6 +147,110 @@ final class JdbcInferenceJobLifecycleService implements InferenceJobLifecycleSer
   }
 
   @Override
+  public CompletionOutcome complete(AssignmentRef assignment, String resultJson) {
+    rejectAmbientTransaction();
+    if (!valid(assignment)) {
+      return new Rejected(RejectionReason.INVALID_COMMAND);
+    }
+    var prepared = resultValidator.prepare(resultJson);
+    return write(
+        () -> {
+          var locked = lockOwner(assignment);
+          if (locked == null) {
+            return new Rejected(RejectionReason.NOT_FOUND);
+          }
+          var job = locked.job();
+          var accepted = repository.findAccepted(job.jobId());
+          if ((accepted != null) != (job.status() == JobStatus.SUCCEEDED)) {
+            throw new IllegalStateException("Accepted result and SUCCEEDED job must be paired");
+          }
+          if (accepted != null) {
+            if (accepted.assignmentNumber() != assignment.assignmentNumber()
+                || !accepted.token().equals(assignment.ownershipToken())) {
+              return new Rejected(RejectionReason.OWNER_MISMATCH);
+            }
+            if (!prepared.valid()) {
+              return new CompletionConflict();
+            }
+            return repository.payloadEquals(job.jobId(), prepared.json())
+                ? new AlreadyAccepted(accepted.receipt())
+                : new CompletionConflict();
+          }
+          // Fence authority before interpreting worker validation diagnostics.
+          var staticRejection = ownershipRejection(assignment, locked);
+          if (staticRejection != null) {
+            return staticRejection;
+          }
+          var provenance =
+              prepared.valid()
+                  ? provenanceViolations(job, prepared.provenance())
+                  : List.<Violation>of();
+          Instant now = repository.now();
+          var rejected = rejection(assignment, locked, now);
+          if (rejected != null) {
+            return rejected;
+          }
+          if (!prepared.valid() || !provenance.isEmpty()) {
+            var code =
+                prepared.valid() ? FailureCode.PROVENANCE_MISMATCH : FailureCode.INVALID_RESULT;
+            repository.fail(job, code, now);
+            return new InvalidResult(code, prepared.valid() ? provenance : prepared.violations());
+          }
+          repository.insertResult(job, prepared.json(), now);
+          repository.succeed(job, now);
+          return new Accepted(
+              new CompletionReceipt(job.jobId(), job.revisionId(), job.inferenceId(), now));
+        });
+  }
+
+  private static List<Violation> provenanceViolations(
+      JobRow job, InferenceResultContractValidator.Provenance result) {
+    var event = JSON.readTree(job.eventPayload());
+    var expectedTickers =
+        event
+            .path("affected_symbols")
+            .valueStream()
+            .map(symbol -> symbol.asString())
+            .collect(Collectors.toUnmodifiableSet());
+    var violations = new ArrayList<Violation>();
+    bind(violations, "/inference_id", job.inferenceId().equals(result.inferenceId()));
+    bind(violations, "/news_event_id", job.revisionId().equals(result.eventId()));
+    bind(violations, "/news_event_sha256", job.contentHash().equals(result.hash()));
+    bind(
+        violations,
+        "/schema_version",
+        "1.0.0".equals(result.schemaVersion())
+            && "1.0.0".equals(job.inputSchemaVersion())
+            && "1.0.0".equals(event.path("schema_version").asString()));
+    bind(violations, "/model/backend", job.expectedBackend().equals(result.backend()));
+    bind(violations, "/ticker_results", expectedTickers.equals(result.tickers()));
+    return List.copyOf(violations);
+  }
+
+  private static void bind(List<Violation> violations, String path, boolean matches) {
+    if (!matches) {
+      violations.add(
+          new Violation("provenance", path, "Result does not match stored job provenance"));
+    }
+  }
+
+  @Override
+  public Optional<CurrentEligibleResult> findCurrentEligibleResult(UUID newsItemId) {
+    rejectAmbientTransaction();
+    if (newsItemId == null) {
+      throw new IllegalArgumentException("newsItemId is required");
+    }
+    return Objects.requireNonNull(
+        resultReads.execute(
+            ignored -> {
+              repository.configureTransaction();
+              repository.establishReadSnapshot();
+              Instant now = repository.now();
+              return repository.findCurrentEligibleResult(newsItemId, now);
+            }));
+  }
+
+  @Override
   public RecoverySummary recoverBatch() {
     rejectAmbientTransaction();
     var progress = new Progress();
@@ -213,7 +331,7 @@ final class JdbcInferenceJobLifecycleService implements InferenceJobLifecycleSer
     return job == null ? null : new Locked(item, job);
   }
 
-  private static Rejected rejection(AssignmentRef ref, Locked locked, Instant now) {
+  private static Rejected ownershipRejection(AssignmentRef ref, Locked locked) {
     if (locked == null) {
       return new Rejected(RejectionReason.NOT_FOUND);
     }
@@ -228,6 +346,15 @@ final class JdbcInferenceJobLifecycleService implements InferenceJobLifecycleSer
     if (!job.revisionId().equals(locked.item().latestEventId())) {
       return new Rejected(RejectionReason.REVISION_OBSOLETE);
     }
+    return null;
+  }
+
+  private static Rejected rejection(AssignmentRef ref, Locked locked, Instant now) {
+    var rejected = ownershipRejection(ref, locked);
+    if (rejected != null) {
+      return rejected;
+    }
+    var job = locked.job();
     if (!job.deadlineAt().isAfter(now)) {
       return new Rejected(RejectionReason.NEWS_EXPIRED);
     }
