@@ -2,11 +2,11 @@
 
 ## Scope
 
-This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current checkpoint is M3A3: Java-only validated atomic completion, historical replay, and current eligible-result reads extend M3A2 claiming, lease renewal, failure, and bounded recovery; authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, a loopback-only local HTTP business API, narrowly scoped Actuator health, and durable restart recovery acceptance tests are present.
+This repository is a staged bootstrap for a news-driven US equity swing-trading system. The current checkpoint is M3B1: a strict loopback worker HTTP API adapts the existing Java claim, renewal, failure, and completion lifecycle; authoritative v1 contracts, immutable PostgreSQL news revisions, transactional ingestion admission, a loopback-only local HTTP business API, narrowly scoped Actuator health, and durable restart recovery acceptance tests are present.
 
 Metadata 3A identifies the schema checkpoint, not completed lifecycle functionality. The complete M3A design is in docs/m3a-design.md. V1/V2 and, once committed, V3 are immutable migration history; corrections require a new migration.
 
-It has no result HTTP endpoint, worker endpoints, worker claiming or execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access.
+It has no result HTTP endpoint, Python worker execution, inference/model integration, Redis, broker integration, signals, risk decisions, portfolio behavior, orders, or external AI access. Worker transport is documented in docs/m3b-worker-protocol.md; the future M3B2 design and absolute-deadline clarification are in docs/m3b-design.md.
 
 ## Architecture boundaries
 

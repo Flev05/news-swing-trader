@@ -32,5 +32,12 @@ corrections require a new migration. M3A1 tests construct valid lifecycle states
 M3A2 adds only Java claim/renew/fail/recover, database-authoritative time, ownership fencing, and
 capacity-safe recovery with separate candidate commits and explicit partial progress. Candidate budgets
 bound work; per-lock/per-statement timeouts do not establish an overall call deadline.
-M3A3 adds the approved completion/query operations without a new migration. There are no result or
+M3A3 adds the approved completion/query operations without a new migration. That checkpoint added no result or
 worker HTTP endpoints, Python changes, scheduler, dependency additions, or model integration.
+
+## M3B1 transport follow-up
+
+M3B1 exposes the existing lifecycle through strict loopback worker HTTP routes without changing
+this lifecycle decision, V1–V3, or domain contracts. Java retains every mutation and transaction.
+See [the worker protocol](../m3b-worker-protocol.md) and [M3B design](../m3b-design.md).
+Python execution and the future M3B2 deadline behavior remain unimplemented.

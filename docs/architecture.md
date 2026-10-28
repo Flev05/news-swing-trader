@@ -1,8 +1,10 @@
-# M3A3 Architecture
+# M3B1 Architecture
 
 The Java 21 modular monolith owns transactional news ingestion and immutable PostgreSQL revisions.
 The Python 3.12 worker remains an independent scaffold; there is no cross-process workflow or worker
-execution. PostgreSQL 18.6 is the sole Compose service. ADRs 0007–0010 record persistence, admission,
+execution. M3B1 exposes the existing Java lifecycle through strict local worker HTTP routes;
+Python remains unchanged. PostgreSQL 18.6 is the sole Compose service.
+ADRs 0007–0010 record persistence, admission,
 the loopback HTTP business API, and durable lifecycle schema decisions.
 
 ```mermaid
@@ -13,6 +15,9 @@ flowchart LR
     Coordinator --> DB[(PostgreSQL 18.6)]
     API --> Reads[Durable event and job reads]
     Reads --> DB
+    Server --> WorkerAPI[Worker HTTP transport]
+    WorkerAPI --> Lifecycle[Java lifecycle service]
+    Lifecycle --> DB
     Server --> Health[Actuator health only]
     Health --> Live[livenessState]
     Health --> Ready[readinessState and db]
@@ -48,7 +53,7 @@ flowchart LR
   Database access denial is restored through resource cleanup. Only post-restoration readiness may
   poll with a deadline. Restart coverage closes one complete context before starting another against
   the same live database and schema, comparing explicitly ordered durable rows and stable metadata.
-- The fake backend is a deterministic test seam. Worker endpoints, inference execution, model
+- The fake backend remains an unused deterministic scaffold seam. Python execution, model
   integration, Redis, broker submission, signals, risk, portfolio behavior, orders, and external AI
   access remain absent.
 
@@ -89,3 +94,18 @@ Current eligible-result reads use a separate read-only REPEATABLE READ boundary.
 pg_current_snapshot() establishes the snapshot before lifecycle time is sampled. A joined latest
 revision/SUCCEEDED/result lookup uses that decision instant, without locks, recovery, or historical
 fallback. No new schema, direct dependency, or HTTP representation is introduced.
+
+## M3B1 worker transport
+
+The [worker protocol](m3b-worker-protocol.md) exposes claim/renew/fail/complete as thin adapters.
+A separate strict parser validates transport envelopes only; it never parses or normalizes
+inner result_json. A worker-only filter enforces raw UTF-8 body limits and no-store responses.
+Dedicated transport projections prevent Java service-carrier changes from expanding the wire
+format. Ownership appears only in claim output and assignment request bodies; public reads,
+errors, URLs, and logs exclude it. Scoped exception advice sanitizes infrastructure failures,
+including recovery exceptions whose earlier candidate commits remain durable.
+
+All existing lifecycle transactions, lock ordering, replay precedence, domain validation,
+listener guards, health configuration, dependencies, migrations, and Python files are unchanged.
+No recovery endpoint or scheduler is introduced. The [M3B design](m3b-design.md) retains the
+future worker's requirements, including actual interruption of blocked I/O at absolute deadlines.

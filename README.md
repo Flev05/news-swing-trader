@@ -1,14 +1,15 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **M3A3**: Java-only validated atomic completion, historical replay, and
-current eligible-result reads extend M3A2 claiming, lease renewal, failure, and bounded recovery.
+repository is currently at **M3B1**: strict loopback worker HTTP routes adapt the Java lifecycle.
+M3A3's validated atomic completion, historical replay, and current eligible-result reads extend
+M3A2 claiming, lease renewal, failure, and bounded recovery.
 These build on M3A1 durable inference-job schema support and ingestion/read compatibility, and the
 M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
 news revisions, transactional ingestion admission, a loopback-only local HTTP business API,
 Actuator health, and durable restart recovery acceptance tests.
 
-It has no result HTTP endpoint, worker endpoints or execution,
+It has no result HTTP endpoint or Python worker execution,
 signal generation, broker integration, model download, external AI access, risk decisions, or
 order intents.
 
@@ -107,9 +108,24 @@ through test configuration outside the application scan. No application-state as
 V1 and V2 remain unchanged; V3 advances `platform_metadata.milestone` to `3A`, identifying
 the schema checkpoint rather than completed lifecycle operations.
 
-Later milestones add worker transport, local inference, deterministic decisioning, DRY_RUN
+Later milestones add Python worker execution, local inference, deterministic decisioning, DRY_RUN
 intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from
 this checkpoint.
+
+## M3B1 worker HTTP boundary
+
+The [worker protocol](docs/m3b-worker-protocol.md) adds POST claim, renew, fail, and complete
+under `/api/v1/worker/`. Controllers delegate to the existing lifecycle service; Java owns
+all database mutations and transaction boundaries. Strict closed transport envelopes keep
+assignment credentials outside domain payloads and pass the decoded `result_json` string
+unchanged to the lifecycle validator. Raw limits are 8 KiB for control requests and 1 MiB
+for completion, including chunked bodies. Responses are no-store and errors are sanitized.
+Public news/job representations and health behavior are unchanged. No recovery route,
+scheduler, automatic worker launch, or Python worker is added.
+
+The [M3B design](docs/m3b-design.md) records future M3B2 processing, retry, heartbeat,
+shutdown, and absolute-deadline requirements. The [M3B1 verification report](docs/m3b1-verification.md)
+records HTTP/PostgreSQL acceptance and repository gates.
 
 ## M3A schema and ingestion compatibility
 
@@ -127,8 +143,9 @@ one pending slot; other states credit none. Successful admission supersedes nont
 and revokes ownership atomically; terminal jobs and historical results remain unchanged.
 
 Existing HTTP representations show all statuses without exposing ownership or assignment metadata.
-M3A3 supplies Java result acceptance and eligible-result reads; there are no result or worker HTTP
-endpoints, scheduler, or Python changes. Schema-only tests construct lifecycle states explicitly
+M3A3 supplied Java result acceptance and eligible-result reads; that checkpoint added no result
+or worker HTTP endpoints, scheduler, or Python changes. Schema-only tests construct lifecycle
+states explicitly
 with SQL. Java validates the complete Inference Result v1 contract and atomically pairs an
 accepted result with SUCCEEDED.
 
@@ -138,7 +155,7 @@ Once committed, V3 must not be edited. Subsequent corrections require a new migr
 
 M3A2 introduced `claimNext()`, `renew(AssignmentRef)`,
 `fail(AssignmentRef, FailureKind)`, and `recoverBatch()`. These Java calls reject ambient transactions;
-they have no worker HTTP routes. No transaction remains open for inference.
+that checkpoint added no worker HTTP routes. No transaction remains open for inference.
 
 PostgreSQL `clock_timestamp()`, sampled on the transaction connection after locks, governs decisions.
 Ingestion retains its independent request Clock. Ownership requires the current revision, RUNNING state,
@@ -174,7 +191,7 @@ See [the M3A2 verification report](docs/m3a2-verification.md) for acceptance cov
 ## M3A3 completion and eligible results
 
 The Java-only lifecycle boundary adds `complete(AssignmentRef, resultJson)` and
-`findCurrentEligibleResult(newsItemId)`. No result or worker HTTP route is added.
+`findCurrentEligibleResult(newsItemId)`. M3A3 added no result or worker HTTP route.
 
 Completion prepares one immutable JSON string before opening a transaction. Strict parsing rejects
 duplicate keys and trailing documents. Decoded string values and property names reject NUL and
