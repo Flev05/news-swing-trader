@@ -1,8 +1,12 @@
 # M4A1 preparation: standalone local extraction benchmark
 
-Status: **preparation only**. All 40 synthetic references are provisional and pending
-human review. No corpus freeze, runtime/model setup, holdout inference or measured
-model performance is claimed. M4A2 requires separate approval before executing setup/run.
+Status: M4A1 preparation is published; the project owner has now authorized **M4A2
+provisional local diagnostics**. All 40 synthetic references remain pending human review
+and unfrozen. Current diagnostic execution and measured results are recorded separately
+in [the M4A2 report](m4a2-diagnostic.md); historical M4A1 evidence is not model performance.
+M4A2 concluded negatively: 4B completed; 8B timed out with incomplete observations. Neither
+profile qualifies for integration. Its inspected holdout cannot serve as untouched final
+validation after remediation; fresh evaluation cases are required for a later generalization claim.
 The operational M3B2 worker remains fake-only. Java's 534-test verification is reused.
 
 ## Commands and boundaries
@@ -43,7 +47,7 @@ are invented article content, not appended reference annotations.
 
 ## Provisional labeling rubric and human review
 
-Current dataset: m4a-v1.1; reference version: 1.1.0; prompt version: 1.1.0.
+Current dataset: m4a-v1.2; reference version: 1.2.0; unchanged prompt version: 1.1.0.
 The m4a-v1 directory names the unfrozen major family, not the current minor revision.
 
 [Complete 40-case review table](m4a-human-review.md). Corpus provenance is original synthetic
@@ -93,11 +97,14 @@ context-limit controls; the inference holdout has 30 cases. Do not tune against 
 Every field label is `clear`, `acceptable_set`, or `ambiguous`, with source evidence. A
 representative value on an ambiguous label exists only to validate a coherent v1 example;
 it is never treated as a scored truth. Acceptable sets use membership, without partial
-credit. Context controls have no semantic inference score. M4A-20 accepts coherent extraction
-or full abstention pending a materiality decision; its materiality label is excluded.
+credit. Context controls have no semantic inference score. Under the project-owner-delegated
+provisional decision, M4A-20 now requires whole-ticker insufficient_source_detail abstention:
+uncalibrated significant does not establish materiality. All classifications are unknown and
+numeric facts omitted. The assistant made this delegated decision; no independent human
+review or freeze is claimed. All other documented 1.1.0 conventions are adopted unchanged.
 
 Unresolved review decisions: materiality descriptions versus independently assessed magnitude;
-M4A-16 days/weeks bins; M4A-17 representability-abstention convention; M4A-20 extraction versus abstention; M4A-08 optional basis-point `other`
+M4A-16 days/weeks bins; M4A-17 representability-abstention convention; M4A-08 optional basis-point `other`
 fact; M4A-10 range omission; M4A-21/22 primary-required/shared-counterparty-optional coverage; M4A-26 missing customer
 impact; and rumor/opinion extraction in M4A-27/29/30. Review every other case as well.
 
@@ -249,7 +256,7 @@ inference route is implemented.
 
 ## Exact future setup and execution (NOT executed in M4A1)
 
-Separate M4A2 approval is required. Download approximately **8.69 GB** total; reserve at least
+The project owner authorized this pinned M4A2 diagnostic setup. Download approximately **8.69 GB** total; reserve at least
 **20 GB free disk** for weights, archives, extracted runtime libraries, JIT caches and raw runs.
 No sudo, compiler/toolkit, driver changes, daemon installation or model conversion is needed.
 
@@ -289,7 +296,9 @@ m4a_fetch \
 ```
 
 Stop on incompatibility or missing host libraries; do not install anything automatically.
-After separate execution approval and reference review (or explicitly diagnostic provisional use):
+For the authorized provisional diagnostic, use unique run directories and append
+--allow-provisional to the run commands below. Evaluation exit 1 is expected while references
+remain pending human review; it is not permission to weaken guards:
 
 ```bash
 M4A_PYTHON="$PWD/apps/ai-worker/.venv/bin/python"
@@ -306,8 +315,8 @@ M4A_PYTHON="$PWD/apps/ai-worker/.venv/bin/python"
 "$M4A_PYTHON" -m news_swing_ai.benchmark evaluate --run-dir "$M4A_ROOT/runs/qwen8b-v1"
 ```
 
-With current pending references, run intentionally refuses; only a separately approved
-provisional diagnostic may append `--allow-provisional`. Evaluation still exits 1 and never
+With current pending references, run intentionally refuses without `--allow-provisional`.
+The owner-authorized diagnostic uses that flag; the default guard is unchanged. Evaluation still exits 1 and never
 marks integration eligibility. Raw summaries are also ignored; retain only a small reviewed,
 clearly attributed summary in docs after M4A2, without checking raw outputs into Git.
 
@@ -335,3 +344,19 @@ review and unfrozen. Previous file identities are recorded in manifest.correctio
 Prompt 1.1.0 now communicates the generic materiality, direction/abstention, period and
 shared-event conventions without IDs, case-specific values, labels or evidence annotations.
 Domain schema_version remains 1.0.0, runtime/model pins and numerical gates are unchanged.
+
+## Owner-delegated reference decision and authorized M4A2
+
+The project owner delegated the provisional annotation decision to the assistant and
+authorized the pinned M4A2 local diagnostic execution. Reference 1.2.0/dataset m4a-v1.2
+require M4A-20 whole-ticker insufficient_source_detail abstention under the existing
+materiality rubric. Source input bytes and prompt 1.1.0 are unchanged. The reference and
+manifest hashes change, with rationale and previous identities recorded in corrections.
+review_status remains pending_human_review and frozen remains false: this is not an
+independent human review. Detailed current denominator inventory and measured diagnostics
+are recorded in docs/m4a2-diagnostic.md. Historical M4A1 verification inventories remain
+versioned evidence for references 1.1.0 rather than current measurement denominators.
+
+Both profiles use --execute-local --allow-provisional, sequentially (4B then 8B), with
+unique run directories and no changes to prompt/references/scoring/gates/profiles during
+measurements. Provisional eligibility remains false regardless of diagnostic gates.

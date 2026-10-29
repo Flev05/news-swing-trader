@@ -1,6 +1,7 @@
 # M4A-v1 synthetic extraction fixtures
 
-Current dataset m4a-v1.1; references/prompt 1.1.0.
+Current dataset m4a-v1.2; references 1.2.0; unchanged prompt 1.1.0.
+M4A-20 decision delegated by project owner to assistant, not independent human review.
 Status: provisional, pending human review; not frozen.
 Explicit authoring corrections and previous file hashes are in manifest.corrections and docs/m4a.md. No real news or inference output.
 

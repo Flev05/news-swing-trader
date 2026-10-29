@@ -1,6 +1,6 @@
 # M4A1 provisional human-review table
 
-Dataset m4a-v1.1; references 1.1.0; prompt 1.1.0. All 40 cases remain **pending human review** and **unfrozen**.
+Dataset m4a-v1.2; references 1.2.0; prompt 1.1.0. All 40 cases remain **pending human review** and **unfrozen**.
 R = required; O = optional source-supported fact. Values below are provisional labels, not model outputs.
 Shared event totals may appear once per explicitly named party; issuer-specific metrics may not transfer.
 O (audit only) does not authorize numeric facts in an abstaining row.
@@ -26,7 +26,7 @@ O (audit only) does not authorize numeric facts in an abstaining row.
 | M4A-17 | holdout | QRTZ full abstention: financing-only extraction has no supported v1 reason; no invented forward-looking reason. | QRTZ=true | None | Human review must confirm the explicit v1 representability-abstention convention; no contract extension or unsupported reason is inserted. |
 | M4A-18 | holdout | RILL contract positive/low; contract_value 1250000 USD. | RILL=false | R RILL contract_value actual=1250000, unit=currency, currency=USD | Provisional rubric applies. |
 | M4A-19 | holdout | SABL regulatory negative/medium; No required numeric fact. | SABL=false | None | Provisional rubric applies. |
-| M4A-20 | holdout | TERN merger_acquisition positive/medium; No required numeric fact. | TERN=acceptable yes/no pending review | None | TERN materiality ambiguous/excluded; Coherent extraction or whole-ticker abstention accepted pending review; see detailed per-field sets; Resolve materiality before freeze; extraction or coherent full abstention are provisionally acceptable. Materiality is excluded. |
+| M4A-20 | holdout | TERN whole-ticker insufficient_source_detail abstention; all classifications unknown. Source unchanged. | TERN=true | None | Project owner delegated this provisional decision to assistant; uncalibrated significant does not establish materiality. No independent human review or freeze. |
 | M4A-21 | development | UMBR negative, VALE positive; shared deal total required on UMBR, optional on VALE. | UMBR=false, VALE=false | R UMBR deal_value actual=300000000, unit=currency, currency=USD; O VALE deal_value actual=300000000, unit=currency, currency=USD | Confirm primary-required/counterparty-optional coverage convention; shared transaction values on either named party are source-supported, while issuer-specific metrics are not transferable. |
 | M4A-22 | development | WREN positive/high; XYLM customer neutral/low; shared contract total required on WREN, optional on XYLM. | WREN=false, XYLM=false | R WREN contract_value actual=20000000, unit=currency, currency=USD; O XYLM contract_value actual=20000000, unit=currency, currency=USD | Confirm primary-required/counterparty-optional coverage convention; shared transaction values on either named party are source-supported, while issuer-specific metrics are not transferable. |
 | M4A-23 | holdout | YARR earnings positive/high; ZINN abstains; never copy EPS to peer. | YARR=false, ZINN=true | R YARR eps actual=3, consensus=2, unit=currency, currency=USD, period=Q3 2026 | Provisional rubric applies. |

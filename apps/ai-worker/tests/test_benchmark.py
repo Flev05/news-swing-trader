@@ -212,8 +212,13 @@ def test_acceptable_sets_use_membership_and_ambiguous_fields_are_excluded() -> N
     report = score([record("M4A-16", payload), record("M4A-20")], REFERENCES, ["M4A-16", "M4A-20"])
     assert report["fields"]["expected_horizon"]["correct"] == 2
     assert report["fields"]["expected_horizon"]["acceptable_set_scored"] == 1
-    assert report["fields"]["materiality"]["total"] == 1
-    assert report["fields"]["materiality"]["ambiguous_excluded"] == 1
+    assert report["fields"]["materiality"]["total"] == 2
+    assert report["fields"]["materiality"]["ambiguous_excluded"] == 0
+    ambiguous = copy.deepcopy(REFERENCES)
+    ambiguous["M4A-16"]["tickers"]["PINE"]["fields"]["materiality"]["status"] = "ambiguous"
+    local = score([record("M4A-16", payload)], ambiguous, ["M4A-16"])
+    assert local["fields"]["materiality"]["rate"] is None
+    assert local["fields"]["materiality"]["ambiguous_excluded"] == 1
 
 
 def test_empty_denominators_are_na_and_do_not_pass() -> None:
@@ -1018,10 +1023,10 @@ def test_shared_value_under_abstaining_party_is_audited_but_not_accepted() -> No
 
 def test_corrections_record_old_hashes_new_source_and_pending_status() -> None:
     manifest = read(DATA / "manifest.json")
-    assert manifest["dataset_version"] == "m4a-v1.1"
-    assert manifest["reference_version"] == "1.1.0"
+    assert manifest["dataset_version"] == "m4a-v1.2"
+    assert manifest["reference_version"] == "1.2.0"
     assert manifest["review_status"] == "pending_human_review" and not manifest["frozen"]
-    correction = manifest["corrections"][-1]
+    correction = next(item for item in manifest["corrections"] if item["version"] == "1.1.0")
     identities = dataset_identity()
     assert all(
         value != identities[name] for name, value in correction["previous_file_sha256"].items()
@@ -1029,3 +1034,26 @@ def test_corrections_record_old_hashes_new_source_and_pending_status() -> None:
     changed = correction["cases"]["M4A-08"]
     assert changed["new_content_hash"] == canonical_hash(CASES["M4A-08"]["event"])
     assert changed["new_content_hash"] != changed["old_content_hash"]
+
+
+def test_owner_delegated_materiality_decision_requires_whole_ticker_abstention() -> None:
+    reference = REFERENCES["M4A-20"]
+    label = reference["tickers"]["TERN"]
+    assert label["fields"]["abstain"]["value"] is True
+    assert label["fields"]["reason_codes"]["value"] == ["insufficient_source_detail"]
+    assert all(spec["status"] == "clear" for spec in label["fields"].values())
+    assert all(
+        spec["value"] == "unknown"
+        for field, spec in label["fields"].items()
+        if field not in {"abstain", "reason_codes"}
+    )
+    assert label["required_facts"] == label["optional_facts"] == []
+    assert reference["decision_provenance"]["independent_human_review"] is False
+    manifest = read(DATA / "manifest.json")
+    assert manifest["annotation_decision"]["delegated_by"] == "project owner"
+    assert manifest["review_status"] == "pending_human_review" and manifest["frozen"] is False
+    assert (
+        dataset_identity()["inputs.json"]
+        == manifest["corrections"][-1]["previous_file_sha256"]["inputs.json"]
+    )
+    assert record("M4A-20")["stages"]["contract_valid"]

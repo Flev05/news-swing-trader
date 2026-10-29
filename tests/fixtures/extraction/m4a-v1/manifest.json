@@ -1,5 +1,5 @@
 {
-  "dataset_version": "m4a-v1.1",
+  "dataset_version": "m4a-v1.2",
   "review_status": "pending_human_review",
   "frozen": false,
   "development": [
@@ -64,7 +64,7 @@
     "source": "Original invented examples; no real news copied; fictional issuers, amounts and URLs.",
     "human_review": "Pending. No human reviewer or corpus freeze is claimed."
   },
-  "reference_version": "1.1.0",
+  "reference_version": "1.2.0",
   "prompt_template_version": "1.1.0",
   "corrections": [
     {
@@ -85,6 +85,26 @@
         "M4A-21/22": "Add source-supported optional shared transaction facts on named counterparties; retain issuer-specific matching and primary coverage requirements.",
         "M4A-26": "Apply shared-event support consistently to named customer FABL, for diagnostic auditing only while its valid reference row abstains. Source unchanged."
       }
+    },
+    {
+      "version": "1.2.0",
+      "reason": "Project-owner-delegated provisional decision before M4A2 measurements; pending_human_review and frozen=false retained. Prompt 1.1.0, scoring, thresholds and profiles unchanged.",
+      "previous_file_sha256": {
+        "inputs.json": "9049225bc7fd7ccc85eea6865a379009472042a27907b6f7bc01ce65c4a07224",
+        "references.json": "236c4cc634adc45100cd9f57c4f9efa796dea11487d75cccbf0c025dbcf68ed4",
+        "manifest.json": "13352e03647f571084b1f63cf700401f031a1225e6f28b8ff548082777d18384"
+      },
+      "cases": {
+        "M4A-20": "Replace materiality ambiguity/extraction alternatives with clear whole-ticker insufficient_source_detail abstention and contract-required unknown classifications. Source text and all input bytes unchanged."
+      }
     }
-  ]
+  ],
+  "annotation_decision": {
+    "delegated_by": "project owner",
+    "decided_by": "assistant",
+    "date": "2026-10-29",
+    "adopted_conventions": "Prompt/reference 1.1.0 conventions with M4A-20 requiring whole-ticker insufficient_source_detail abstention.",
+    "independent_human_review": false,
+    "scope": "Provisional diagnostic reference decision, not corpus freeze or integration approval."
+  }
 }

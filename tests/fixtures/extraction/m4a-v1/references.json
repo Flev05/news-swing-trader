@@ -1482,86 +1482,50 @@
     },
     "M4A-20": {
       "category": "corporate",
-      "review_summary": "TERN merger_acquisition positive/medium; No required numeric fact.",
-      "questions": "Resolve materiality before freeze; extraction or coherent full abstention are provisionally acceptable. Materiality is excluded.",
+      "review_summary": "TERN must abstain: uncalibrated significant does not establish materiality; all classifications unknown, no numeric facts.",
+      "questions": "Decision delegated by project owner to assistant; no independent human review. Future human review remains pending.",
       "tickers": {
         "TERN": {
           "fields": {
             "event_type": {
-              "status": "acceptable_set",
-              "value": "merger_acquisition",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "merger_acquisition",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "direction": {
-              "status": "acceptable_set",
-              "value": "positive",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "positive",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "materiality": {
-              "status": "ambiguous",
-              "value": "medium",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "rationale": "Significant is not a calibrated magnitude; provisional representative medium is not scored."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "relevance": {
-              "status": "acceptable_set",
-              "value": "direct",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "direct",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "information_status": {
-              "status": "acceptable_set",
-              "value": "fact",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "fact",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "abstain": {
-              "status": "acceptable_set",
-              "value": false,
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                false,
-                true
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": true,
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "issuer_role": {
-              "status": "acceptable_set",
-              "value": "primary",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "primary",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "novelty": {
-              "status": "acceptable_set",
-              "value": "new",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "new",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "expected_horizon": {
               "status": "clear",
@@ -1569,35 +1533,28 @@
               "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "schedule_status": {
-              "status": "acceptable_set",
-              "value": "unscheduled",
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                "unscheduled",
-                "unknown"
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "status": "clear",
+              "value": "unknown",
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             },
             "reason_codes": {
-              "status": "acceptable_set",
+              "status": "clear",
               "value": [
-                "deal_announced"
+                "insufficient_source_detail"
               ],
-              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value.",
-              "values": [
-                [
-                  "deal_announced"
-                ],
-                [
-                  "insufficient_source_detail"
-                ]
-              ],
-              "rationale": "Pending review of significant materiality: allow supported extraction or contract-required whole-ticker abstention; authoritative conditional rules still apply."
+              "evidence": "Tern Manufacturing (TERN) announced an unscheduled acquisition of a private supplier. The filing calls it a significant positive operating development but gives no scale or deal value."
             }
           },
           "required_facts": [],
           "optional_facts": []
         }
+      },
+      "decision_provenance": {
+        "authority": "Project owner explicitly delegated this provisional annotation decision to the assistant in the M4A2 request.",
+        "decided_by": "assistant",
+        "date": "2026-10-29",
+        "rationale": "Adopt documented 1.1.0 conventions; require whole-ticker insufficient_source_detail abstention because uncalibrated significant supplies no materiality bin. Preserve source text.",
+        "independent_human_review": false
       }
     },
     "M4A-21": {
@@ -3553,5 +3510,5 @@
       }
     }
   },
-  "reference_version": "1.1.0"
+  "reference_version": "1.2.0"
 }

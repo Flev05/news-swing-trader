@@ -1,5 +1,8 @@
 # M4A1 preparation review verification — 2026-10-29
 
+Historical verification for references 1.1.0. The subsequent owner-delegated reference
+1.2.0 decision and current denominator inventory are in docs/m4a2-diagnostic.md.
+
 This report records M4A1 preparation verification before publication. During that phase,
 no runtime/model artifact downloads, installations, real inference, commits or pushes occurred. All subprocesses in regression tests are canned Python
 HTTP stubs in temporary directories, not model runtimes or measured extraction runs.
