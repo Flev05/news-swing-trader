@@ -1,9 +1,11 @@
 # M3B design
 
-M3B1 implements only the [Java worker HTTP protocol](m3b-worker-protocol.md).
-M3B2 below remains approved future work, not an implemented worker or authorization to
-change Python during M3B1. V1–V3, domain contracts, dependencies and infrastructure remain
-unchanged. Java owns all database mutations.
+Status: M3B1 implemented the [Java worker HTTP protocol](m3b-worker-protocol.md);
+M3B2 implements the local Python fake worker and actual-process vertical slice described below.
+Fake execution produces deterministic abstention only; real-model inference remains future work.
+V1–V3, domain contracts, dependencies and infrastructure remain unchanged. Java owns all database
+mutations. See [M3B2 verification](m3b2-verification.md) for execution evidence; the M3B1 report
+is a historical snapshot of the earlier Java-only checkpoint.
 
 ## Checkpoint boundaries
 
@@ -18,7 +20,7 @@ Preserve the scaffold CLI; add `python -m news_swing_ai.worker` with `--base-url
 launch, real model, external AI/provider/broker, Redis, dashboard, signals, risk, portfolio,
 or orders.
 
-## Future Python flow
+## Implemented Python flow
 
 Use standard-library HTTPConnection directly so environment proxies cannot route requests.
 Allow only `http://127.0.0.1:PORT` origins with no userinfo, query, fragment, or non-root path.
@@ -31,6 +33,12 @@ ID/hash, and one abstention per affected symbol in stored order. All classificat
 unknown; numeric facts are empty; reason is unsupported_event_type. Identify model backend
 fake, name deterministic-abstention, version 1, prompt_template_version 1.0.0.
 Freeze the exact completion request bytes, including generated_at, for every retry.
+Before accepting a receipt, correlate its job ID with the active reference, its event ID with
+stored news, and its inference ID with the server-assigned inference ID. A mismatch is an
+uncertain acknowledgement and uses the same frozen completion and existing retry budget.
+Assignment expiry, renewed expiry, and receipt acceptance time require complete UTC timestamps
+of the form `YYYY-MM-DDTHH:MM:SS[.fraction]Z`; incomplete or nonconforming timestamps follow the
+existing ambiguous-response policy.
 
 Renew at most every 10 seconds during processing and obtain a final acknowledged renewal
 before completion. Stop heartbeat requests during completion reconciliation. Cancel/join a
@@ -55,7 +63,7 @@ identity and synchronize cancellation/cleanup so an old callback cannot close a 
 request's connection. Test that race explicitly. No Python implementation of this behavior
 belongs to M3B1.
 
-## Future transport recovery and shutdown
+## Implemented transport recovery and shutdown
 
 - Proven connection failure before any request bytes could be sent: bounded backoff.
 - Ambiguous claim delivery, malformed/truncated claim response, post-send timeout/reset, or
@@ -89,7 +97,7 @@ exit, leaving durable recovery to Java.
 Exit codes: 0 normal completion/shutdown/no work in once mode; 2 configuration/protocol/result
 defect; 3 unresolved transport; 4 explicit authority loss in once mode.
 
-## Future process acceptance
+## Implemented process acceptance
 
 Start isolated PostgreSQL and the real Java servlet app, then launch the actual Python CLI
 through repository-managed uv with locked/no-sync/offline tooling. Ingest synthetic news over

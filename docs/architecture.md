@@ -1,9 +1,10 @@
-# M3B1 Architecture
+# M3B2 Architecture
 
 The Java 21 modular monolith owns transactional news ingestion and immutable PostgreSQL revisions.
-The Python 3.12 worker remains an independent scaffold; there is no cross-process workflow or worker
-execution. M3B1 exposes the existing Java lifecycle through strict local worker HTTP routes;
-Python remains unchanged. PostgreSQL 18.6 is the sole Compose service.
+The Python 3.12 local fake worker runs one assignment at a time through the strict loopback
+claim/renew/fail/complete HTTP routes. The ingestion-to-persisted-result workflow is implemented
+with deterministic abstention output; real-model inference remains future work. The original
+scaffold CLI/backend remain unchanged. PostgreSQL 18.6 is the sole Compose service.
 ADRs 0007–0010 record persistence, admission,
 the loopback HTTP business API, and durable lifecycle schema decisions.
 
@@ -23,7 +24,8 @@ flowchart LR
     Health --> Ready[readinessState and db]
     Ready --> DB
     Contracts[contracts/v1 JSON Schemas] --> API
-    Contracts --> Python[Python contract tests and fake backend]
+    Contracts --> Python[Python local fake worker and contract tests]
+    Python -->|Loopback HTTP control requests| Server
 ```
 
 ## Boundaries
@@ -53,9 +55,9 @@ flowchart LR
   Database access denial is restored through resource cleanup. Only post-restoration readiness may
   poll with a deadline. Restart coverage closes one complete context before starting another against
   the same live database and schema, comparing explicitly ordered durable rows and stable metadata.
-- The fake backend remains an unused deterministic scaffold seam. Python execution, model
-  integration, Redis, broker submission, signals, risk, portfolio behavior, orders, and external AI
-  access remain absent.
+- The worker executes deterministic fake abstention only. Real-model integration, Redis,
+  broker submission, signals, risk, portfolio behavior, orders, and external AI access remain absent.
+  The original deterministic scaffold seam and CLI remain available unchanged.
 
 ## Java lifecycle transactions
 
@@ -105,7 +107,28 @@ format. Ownership appears only in claim output and assignment request bodies; pu
 errors, URLs, and logs exclude it. Scoped exception advice sanitizes infrastructure failures,
 including recovery exceptions whose earlier candidate commits remain durable.
 
-All existing lifecycle transactions, lock ordering, replay precedence, domain validation,
-listener guards, health configuration, dependencies, migrations, and Python files are unchanged.
-No recovery endpoint or scheduler is introduced. The [M3B design](m3b-design.md) retains the
-future worker's requirements, including actual interruption of blocked I/O at absolute deadlines.
+The M3B1 transport preserved lifecycle transactions, lock ordering, replay precedence, domain
+validation, listener guards, health configuration, dependencies, migrations, and Python files.
+M3B2 adds Python execution without changing those Java production boundaries.
+No recovery endpoint or scheduler is introduced.
+
+## M3B2 local fake execution
+
+The [approved M3B design](m3b-design.md) is implemented by
+`python -m news_swing_ai.worker`, with continuous and once modes. Java owns all database mutations.
+A cooperative processor runs under acknowledged authority while the single control thread renews
+leases. The final renewal precedes completion; output and completion bytes remain frozen for retries.
+Receipt job, stored event, and assigned inference identities must all match before success is reported.
+Mismatched receipts reconcile within the existing completion budget without failure or reclaim.
+Assignment, renewal, and receipt timestamps require complete UTC date/time with terminal Z;
+valid fractional seconds are accepted.
+
+Direct standard-library HTTP ignores proxies and permits only the configured loopback origin and
+fixed routes. Per-request timers interrupt blocked socket I/O using shutdown before close; timer
+identity and joined cleanup protect subsequent requests. Signals initiate the bounded shutdown
+policy. Ambiguous claim recovery requires manual Java closure/restart against the same database;
+the worker has no database, request ledger, or automatic Java restart mechanism.
+
+The [worker guide](../apps/ai-worker/README.md) documents operation and exit codes. The
+[M3B2 verification report](m3b2-verification.md) records actual-process acceptance and the
+executed disposable demo. Earlier milestone verification reports are historical snapshots.

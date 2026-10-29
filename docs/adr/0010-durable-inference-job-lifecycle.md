@@ -13,7 +13,8 @@ FAILED, SUPERSEDED and EXPIRED; M3A1 implements only ingestion's creation/supers
 
 Snapshot validated positive maximum assignments (default three total assignments) and expected
 local backend (default fake) on newly created jobs. Retain existing job policy across restarts and
-configuration changes. Backend names are metadata policy only; no adapters are implemented.
+configuration changes. Backend names are stored policy metadata. M3A implemented no execution adapters; M3B2 now
+executes fake abstention only, with real-model adapters reserved for future milestones.
 
 Keep the item -> NEWS_INFERENCE mutex -> job lock order. Pending admission uses
 pending + 1 - (previous is PENDING ? 1 : 0). A successfully admitted revision supersedes a
@@ -40,4 +41,7 @@ worker HTTP endpoints, Python changes, scheduler, dependency additions, or model
 M3B1 exposes the existing lifecycle through strict loopback worker HTTP routes without changing
 this lifecycle decision, V1–V3, or domain contracts. Java retains every mutation and transaction.
 See [the worker protocol](../m3b-worker-protocol.md) and [M3B design](../m3b-design.md).
-Python execution and the future M3B2 deadline behavior remain unimplemented.
+At the M3B1 checkpoint Python execution remained unimplemented. M3B2 now adds local fake
+execution, completion reconciliation, cooperative shutdown, and absolute-deadline interruption
+without changing Java production lifecycle behavior. Real-model inference remains future work.
+See [M3B2 verification](../m3b2-verification.md) for current execution evidence.

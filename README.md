@@ -1,7 +1,8 @@
 # News Swing Trader
 
 Production-oriented scaffolding for a future news-driven US equity swing-trading system. The
-repository is currently at **M3B1**: strict loopback worker HTTP routes adapt the Java lifecycle.
+repository is currently at **M3B2**: a local Python fake worker completes the HTTP vertical slice.
+Strict loopback worker HTTP routes adapt the Java lifecycle.
 M3A3's validated atomic completion, historical replay, and current eligible-result reads extend
 M3A2 claiming, lease renewal, failure, and bounded recovery.
 These build on M3A1 durable inference-job schema support and ingestion/read compatibility, and the
@@ -9,7 +10,7 @@ M2B2B foundation of authoritative v1 contracts, immutable PostgreSQL
 news revisions, transactional ingestion admission, a loopback-only local HTTP business API,
 Actuator health, and durable restart recovery acceptance tests.
 
-It has no result HTTP endpoint or Python worker execution,
+It has no public result HTTP endpoint, real inference,
 signal generation, broker integration, model download, external AI access, risk decisions, or
 order intents.
 
@@ -108,11 +109,11 @@ through test configuration outside the application scan. No application-state as
 V1 and V2 remain unchanged; V3 advances `platform_metadata.milestone` to `3A`, identifying
 the schema checkpoint rather than completed lifecycle operations.
 
-Later milestones add Python worker execution, local inference, deterministic decisioning, DRY_RUN
-intents, reliability controls, and the end-to-end vertical slice. They are deliberately absent from
+Later milestones add local model inference, deterministic decisioning, DRY_RUN
+intents, and further reliability controls. They are deliberately absent from
 this checkpoint.
 
-## M3B1 worker HTTP boundary
+## Worker HTTP boundary and M3B2 execution
 
 The [worker protocol](docs/m3b-worker-protocol.md) adds POST claim, renew, fail, and complete
 under `/api/v1/worker/`. Controllers delegate to the existing lifecycle service; Java owns
@@ -121,11 +122,16 @@ assignment credentials outside domain payloads and pass the decoded `result_json
 unchanged to the lifecycle validator. Raw limits are 8 KiB for control requests and 1 MiB
 for completion, including chunked bodies. Responses are no-store and errors are sanitized.
 Public news/job representations and health behavior are unchanged. No recovery route,
-scheduler, automatic worker launch, or Python worker is added.
+scheduler, or automatic worker launch is added. M3B1 introduced this Java-only transport;
+M3B2 now runs the local Python fake worker through it, producing deterministic abstention results.
+Real-model inference remains future work.
 
-The [M3B design](docs/m3b-design.md) records future M3B2 processing, retry, heartbeat,
-shutdown, and absolute-deadline requirements. The [M3B1 verification report](docs/m3b1-verification.md)
-records HTTP/PostgreSQL acceptance and repository gates.
+The [M3B design](docs/m3b-design.md) records the approved M3B2 processing, retry, heartbeat,
+shutdown, and absolute-deadline requirements. The [worker guide](apps/ai-worker/README.md) documents
+the new module CLI and manual ambiguous-claim recovery. The [M3B2 verification report](docs/m3b2-verification.md)
+records process acceptance, repository gates, and an executed disposable HTTP/PostgreSQL demo.
+The historical [M3B1 verification report](docs/m3b1-verification.md) records HTTP/PostgreSQL
+acceptance and repository gates at that checkpoint.
 
 ## M3A schema and ingestion compatibility
 
@@ -138,7 +144,8 @@ Existing V2 revisions, admissions, job identities, and latest pointers are prese
 
 Ingestion snapshots `trader.inference.jobs.max-assignments` (positive; default 3 total assignments)
 and `trader.inference.jobs.expected-backend` (fake, llama.cpp, or ollama; default fake).
-These fields are policy metadata, not implemented backends. Replacing a pending predecessor credits
+These fields are immutable policy metadata; M3B2 implements fake execution only. The real-model
+backend names remain reserved for future milestones. Replacing a pending predecessor credits
 one pending slot; other states credit none. Successful admission supersedes nonterminal predecessors
 and revokes ownership atomically; terminal jobs and historical results remain unchanged.
 

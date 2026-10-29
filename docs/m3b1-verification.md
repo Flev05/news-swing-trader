@@ -1,5 +1,8 @@
 # M3B1 verification
 
+Historical snapshot of the Java-only M3B1 checkpoint. Statements about absent Python execution
+describe that checkpoint; the current M3B2 implementation is recorded in [M3B2 verification](m3b2-verification.md).
+
 ## Baseline and scope
 
 Implemented against HEAD `21a61f8c72185be8a115be6eac8783899ebe01d6`.

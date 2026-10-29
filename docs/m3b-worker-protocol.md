@@ -1,8 +1,9 @@
-# M3B1 local worker HTTP protocol
+# M3B local worker HTTP protocol
 
-Status: implemented Java transport only. No Python worker runs in this checkpoint.
-The authoritative News Event v1 and Inference Result v1 contracts remain unchanged.
-See [M3B design](m3b-design.md) for the future worker and its recovery policy.
+Status: Java transport was implemented in M3B1 and is used by the implemented M3B2 local
+Python fake worker. Real-model inference remains future work. The authoritative News Event v1
+and Inference Result v1 contracts remain unchanged. See [M3B design](m3b-design.md) for the worker
+and its recovery policy, and [M3B2 verification](m3b2-verification.md) for execution evidence.
 
 ## Listener and delegation
 
@@ -44,7 +45,17 @@ Receipt = {
 
 `news_event_json` is the stored complete News Event v1 document, including actual identity,
 content hash, deadline, and all affected symbols. The worker must use the assigned inference ID.
-Transport references and receipts are outside the domain documents.
+Transport references and receipts are outside the domain documents. A completion receipt must
+match the active reference's job ID, the stored event ID, and the assigned inference ID.
+A mismatched receipt is an uncertain acknowledgement: replay the same frozen completion within
+the existing budget, without regeneration, failure reporting, success, or another claim based on
+that acknowledgement.
+
+UTC timestamps require `YYYY-MM-DDTHH:MM:SS[.fraction]Z`, including the date, uppercase T,
+complete time, and terminal uppercase Z. Fractional seconds are optional; numeric offsets,
+incomplete timestamps, timezone-naive values, and malformed dates/times are rejected. This applies
+to assignment expiry, renewal expiry, and receipt acceptance time without changing their existing
+ambiguous-response recovery rules.
 
 All operations use POST with UTF-8 `application/json`. No query parameters are accepted.
 `Content-Encoding` must be absent or `identity`; compression is unsupported.
@@ -152,5 +163,5 @@ WHERE j.job_id = '11111111-1111-1111-1111-111111111111'::uuid;
 ```
 
 Success has status SUCCEEDED and exactly one immutable result. Do not select ownership_token
-or accepted_owner_token into demo output. Actual Python processing and its manual vertical-slice
-demo remain M3B2 work.
+or accepted_owner_token into demo output. The implemented fake worker and executed disposable
+vertical-slice demo are documented in [M3B2 verification](m3b2-verification.md).

@@ -10,4 +10,5 @@ The future core engine will remain one Java modular monolith. Local inference wi
 
 ## Consequences
 
-The boundary is small and operationally simple. This milestone creates only the two independent scaffolds; no cross-process workflow exists yet.
+The boundary is small and operationally simple. At Milestone 0 this decision created only two independent scaffolds, with no cross-process workflow.
+M3B2 now implements the local fake-worker HTTP workflow; real-model inference remains future work.

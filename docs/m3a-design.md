@@ -12,8 +12,10 @@ Metadata `3A` identifies the schema checkpoint, not completed lifecycle function
 There are no claim, renewal, failure, recovery, completion, or eligible-result-query services,
 placeholder implementations, worker HTTP endpoints, scheduler, or Python changes in M3A1.
 
-M3A2 implements claim/renew/fail/recover below; M3A3 implements result acceptance, historical replay, and current-result eligibility. M3B may expose it to one
-local Python worker over loopback HTTP. Java owns every database mutation. No transaction or lock
+M3A2 implements claim/renew/fail/recover below; M3A3 implements result acceptance, historical
+replay, and current-result eligibility. M3B1 exposes it over loopback HTTP, and M3B2 now executes
+one local Python fake worker through that transport. Real-model inference remains future work.
+Java owns every database mutation. No transaction or lock
 may remain open during inference. No external AI, model downloads, Redis, broker, signals, risk,
 portfolio, or order behavior belongs to M3A. Keep both authoritative v1 contracts unchanged.
 Use existing pinned dependencies; none are added for M3A1.
