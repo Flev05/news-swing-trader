@@ -1,0 +1,90 @@
+{
+  "dataset_version": "m4a-v1.1",
+  "review_status": "pending_human_review",
+  "frozen": false,
+  "development": [
+    "M4A-01",
+    "M4A-04",
+    "M4A-11",
+    "M4A-15",
+    "M4A-21",
+    "M4A-22",
+    "M4A-27",
+    "M4A-31"
+  ],
+  "holdout": [
+    "M4A-02",
+    "M4A-03",
+    "M4A-05",
+    "M4A-06",
+    "M4A-07",
+    "M4A-08",
+    "M4A-09",
+    "M4A-10",
+    "M4A-12",
+    "M4A-13",
+    "M4A-14",
+    "M4A-16",
+    "M4A-17",
+    "M4A-18",
+    "M4A-19",
+    "M4A-20",
+    "M4A-23",
+    "M4A-24",
+    "M4A-25",
+    "M4A-26",
+    "M4A-28",
+    "M4A-29",
+    "M4A-30",
+    "M4A-32",
+    "M4A-33",
+    "M4A-34",
+    "M4A-35",
+    "M4A-36",
+    "M4A-37",
+    "M4A-38",
+    "M4A-39",
+    "M4A-40"
+  ],
+  "context_limit": [
+    "M4A-39",
+    "M4A-40"
+  ],
+  "repeat_subset": [
+    "M4A-03",
+    "M4A-07",
+    "M4A-23",
+    "M4A-25",
+    "M4A-30",
+    "M4A-38"
+  ],
+  "provenance": {
+    "author": "Codex, synthetic drafting assistance",
+    "created_at": "2026-10-29",
+    "source": "Original invented examples; no real news copied; fictional issuers, amounts and URLs.",
+    "human_review": "Pending. No human reviewer or corpus freeze is claimed."
+  },
+  "reference_version": "1.1.0",
+  "prompt_template_version": "1.1.0",
+  "corrections": [
+    {
+      "version": "1.1.0",
+      "reason": "M4A1 preparation review corrections before any real model execution; all labels remain provisional and unfrozen.",
+      "previous_file_sha256": {
+        "inputs.json": "cc70c01fed32d7f18f892032da4e6082d7ff443f6be9f297bbb34726ca586459",
+        "references.json": "6bb72b1fa0465dc986d72c0f89d9e79e403d76f0cc650752440a60e967aa56eb",
+        "manifest.json": "6c1896a2b03399c8e89e31b9edc052a735b262ceeb05292d8ec9d8e9a7b1a20c"
+      },
+      "cases": {
+        "M4A-08": {
+          "reason": "Explicitly augment original synthetic source with margin consensus; add required consensus fact rather than claim an unstated comparison.",
+          "old_content_hash": "026f281acec7ecad5ed3a9c3034ebfdb6acf8625244bc0bf08be83eb1f386593",
+          "new_content_hash": "28bf28dc4d63645232776f5b96a4768162706903fbf18edffbfcb9d17e44fefa"
+        },
+        "M4A-17": "Replace unsupported representative extraction reason with explicit v1 representability abstention. Source unchanged.",
+        "M4A-21/22": "Add source-supported optional shared transaction facts on named counterparties; retain issuer-specific matching and primary coverage requirements.",
+        "M4A-26": "Apply shared-event support consistently to named customer FABL, for diagnostic auditing only while its valid reference row abstains. Source unchanged."
+      }
+    }
+  ]
+}

@@ -220,3 +220,11 @@ The return type exposes no ownership token. Ingestion's Clock is unchanged.
 
 See [the M3A3 verification report](docs/m3a3-verification.md) for test counts, races, rollback,
 restart evidence, protected paths, and a concrete lost-acknowledgement example.
+
+## M4A1 experiment preparation
+
+The standalone [M4A benchmark](docs/m4a.md) provides offline corpus checks and
+`python -m news_swing_ai.benchmark check/run/evaluate` tooling. Its 40 synthetic cases
+and [complete review table](docs/m4a-human-review.md) are **provisional and pending human review**.
+M4A1 adds no model installation or measured inference; runtime/model setup and executions
+require separate M4A2 approval. The operational worker remains fake by default.

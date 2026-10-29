@@ -21,8 +21,14 @@ class Violation:
 def validation_errors(schema_path: Path, payload_path: Path) -> tuple[Violation, ...]:
     """Return stable violations; an empty tuple means valid."""
 
-    schema = cast(dict[str, object], json.loads(schema_path.read_text(encoding="utf-8")))
     payload = cast(dict[str, object], json.loads(payload_path.read_text(encoding="utf-8")))
+    return payload_errors(schema_path, payload)
+
+
+def payload_errors(schema_path: Path, payload: dict[str, object]) -> tuple[Violation, ...]:
+    """Validate an in-memory document with the same rules as the file API."""
+
+    schema = cast(dict[str, object], json.loads(schema_path.read_text(encoding="utf-8")))
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
 
