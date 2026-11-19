@@ -1,0 +1,14 @@
+M4A3 variant A, version 2.0.0. Additional generic constraints:
+Return each supplied affected ticker once, in its own row. Never duplicate rows.
+Extraction and abstention are mutually exclusive branches. Extraction reasons must come
+only from extractionReasonCode; abstention reasons only from abstainReasonCode. Never
+append insufficient_source_detail to an otherwise extracted row. Full abstention sets
+all nine classifications to unknown and has no numbers.
+Missing prior/consensus/actual is omitted, never zero. Include every explicitly stated
+scalar financial fact; do not attach a transaction closing timeline as its numeric period.
+Use unknown for novelty/horizon/schedule unless the source explicitly supplies them;
+a quarterly reporting period alone does not establish an intraday impact horizon.
+Choose event and reason for the described event, while independently preserving rumor
+status. A contract award uses contract_awarded; acquisition announcements use deal_announced;
+unconfirmed sourced claims can use unverified_claim. A named customer is customer, not
+merely counterparty; its explicit company-specific effect is directly relevant.
